@@ -1,4 +1,5 @@
 module.exports = {
+    ONE_MINUTES: 1000 * 60 * 1,
     TWO_MINUTES: 1000 * 60 * 2,
     THREE_MINUTES: 1000 * 60 * 3,
     FOUR_MINUTES: 1000 * 60 * 4,
