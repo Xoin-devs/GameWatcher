@@ -3,7 +3,9 @@ const Discord = require('discord.js');
 const { token } = require('./config');
 const { registerCommands } = require('./commands');
 const Scheduler = require('./scheduler');
-const { WatcherManager, TwitterWatcher, SteamWatcher } = require('./watchers/steamWatcher');
+const { WatcherManager } = require('./watchers/watcherManager');
+const { SteamWatcher } = require('./watchers/steamWatcher');
+const { TwitterWatcher } = require('./watchers/twitterWatcher');
 
 client.once(Discord.Events.ClientReady, async () => {
     await registerCommands();

@@ -1,8 +1,4 @@
-// this class is used to get latest steam news for a game given the link to the game's steam page
-// this class uses the steam API to get the news
-
 const axios = require('axios');
-const cheerio = require('cheerio');
 
 class SteamWrapper {
     constructor() {
@@ -27,4 +23,4 @@ class SteamWrapper {
     }
 }
 
-module.exports = SteamWrapper;
+module.exports = { SteamWrapper };
