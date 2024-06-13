@@ -3,7 +3,11 @@ const fs = require('fs');
 const path = require('path');
 const Joi = require('joi');
 
-dotenv.config();
+const env = process.env.NODE_ENV || 'dev';
+const result = dotenv.config({ path: path.join(__dirname, "..", `.env.${env}`) });
+if (result.error) {
+    throw result.error;
+}
 
 const configPath = path.join(__dirname, '..', 'config.json');
 const configSchema = Joi.object({
@@ -18,9 +22,9 @@ const configSchema = Joi.object({
             name: Joi.string().required(),
             sources: Joi.array().items(
                 Joi.object().pattern(
-                    Joi.string(), // Any string key
-                    Joi.string()  // The value is a string
-                ).unknown(), // Allow additional keys
+                    Joi.string(),
+                    Joi.string()
+                ).unknown(),
             ).optional(),
             releaseDate: Joi.date().optional(),
         })

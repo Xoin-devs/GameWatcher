@@ -1,23 +1,25 @@
 {
-  "name": "troll",
+  "name": "game-watcher",
   "version": "1.0.0",
   "description": "",
   "main": "app/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:dev": "cross-env NODE_ENV=dev node .",
+    "start:prod": "cross-env NODE_ENV=prod node ."
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.2",
-    "cheerio": "^1.0.0-rc.12",
     "discord.js": "^14.15.2",
     "dotenv": "^16.4.5",
     "joi": "^17.13.1",
     "js-bbcode-parser": "^5.1.0",
     "node-cron": "^3.0.3",
     "node-persist": "^4.0.1",
-    "puppeteer": "^22.11.0",
-    "twit": "^2.2.11"
+    "puppeteer": "^22.11.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
   }
 }
