@@ -1,0 +1,47 @@
+{
+  "guilds": [
+    {
+      "guildId": "960898690258714634",
+      "channelId": "960898690258714637"
+    }
+  ],
+  "games": [
+    {
+      "name": "Fable 4",
+      "sources": [
+        {
+          "twitter": "fable",
+          "lastUpdate": "1717956594000"
+        }
+      ]
+    },
+    {
+      "name": "Ubisoft",
+      "sources": [
+        {
+          "twitter": "Ubisoft",
+          "lastUpdate": "1718209412000"
+        }
+      ]
+    },
+    {
+      "name": "Once Human",
+      "sources": [
+        {
+          "steam": "2139460",
+          "lastUpdate": "1718200570"
+        }
+      ],
+      "releaseDate": "2024-06-13"
+    },
+    {
+      "name": "Elden Ring",
+      "sources": [
+        {
+          "steam": "1245620",
+          "lastUpdate": "1718206239"
+        }
+      ]
+    }
+  ]
+}
