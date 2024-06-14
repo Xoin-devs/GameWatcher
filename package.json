@@ -5,7 +5,9 @@
   "main": "app/app.js",
   "scripts": {
     "start:dev": "cross-env NODE_ENV=dev node .",
-    "start:prod": "cross-env NODE_ENV=prod node ."
+    "start:prod": "cross-env NODE_ENV=prod node .",
+    "deployCommands:dev": "cross-env NODE_ENV=dev node app/commandDeployer.js",
+    "deployCommands:prod": "cross-env NODE_ENV=prod node app/commandDeployer.js"
   },
   "author": "",
   "license": "ISC",

@@ -74,11 +74,7 @@ function writeConfig(config) {
 
 module.exports = {
     token: process.env.TOKEN,
-    twitterConsumerKey: process.env.TWITTER_API_KEY,
-    twitterConsumerSecret: process.env.TWITTER_API_KEY_SECRET,
-    twitterAccessToken: process.env.TWITTER_ACCESS_TOKEN,
-    twitterAccessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
-    twitterBearerToken: process.env.TWITTER_BEARER_TOKEN,
+    clientId: process.env.CLIENT_ID,
     readConfig,
     writeConfig
 };
