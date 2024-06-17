@@ -11,8 +11,13 @@ function isGameRegistered(config, gameName) {
     return config.games.some(game => normalizeName(game.name) === normalizeName(gameName));
 }
 
+function getGamesByName(config, gameName) {
+    return config.games.filter(game => normalizeName(game.name).includes(normalizeName(gameName)));
+}
+
 module.exports = {
     normalizeName,
     parseDate,
     isGameRegistered,
+    getGamesByName,
 };
