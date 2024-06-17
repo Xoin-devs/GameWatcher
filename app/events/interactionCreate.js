@@ -55,6 +55,24 @@ async function handleButtonOrMenu(interaction) {
 }
 // #endregion
 
+// #region AutoComplete Handling
+async function handleAutoComplete(interaction) {
+    const command = interaction.client.commands.get(interaction.commandName);
+
+    if (!command) {
+        logger.error(`No command matching ${interaction.commandName} was found.`);
+        return;
+    }
+
+    try {
+        await command.autocomplete(interaction);
+    }
+    catch (error) {
+        logger.error(`Error executing autocomplete for command ${interaction.commandName}: ${error.message}`);
+    }
+}
+// #endregion
+
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
@@ -62,6 +80,8 @@ module.exports = {
             await handleSlashCommand(interaction);
         } else if (interaction.isButton() || interaction.isStringSelectMenu()) {
             await handleButtonOrMenu(interaction);
+        } else if (interaction.isAutocomplete()) {
+            await handleAutoComplete(interaction);
         }
     },
 };
