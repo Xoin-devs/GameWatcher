@@ -25,7 +25,7 @@ class Watcher {
                 try {
                     await this.sendNews(latest);
                 } catch (error) {
-                    logger.error(`Error sending news for game ${gameName}`);
+                    logger.error(`Error sending news for game ${gameName}`, error);
                 }
             }
         }

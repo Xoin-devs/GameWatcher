@@ -16,48 +16,6 @@
       ]
     },
     {
-      "name": "Ubisoft",
-      "sources": [
-        {
-          "twitter": "Ubisoft",
-          "lastUpdate": "1718634708000"
-        }
-      ]
-    },
-    {
-      "name": "Once Human",
-      "sources": [
-        {
-          "steam": "2139460",
-          "lastUpdate": "1718200570"
-        }
-      ],
-      "releaseDate": "2024-06-13"
-    },
-    {
-      "name": "Elden Ring",
-      "sources": [
-        {
-          "steam": "1245620",
-          "lastUpdate": "1718642058"
-        }
-      ]
-    },
-    {
-      "name": "Enotria: The Last Song",
-      "sources": [
-        {
-          "twitter": "enotriagame",
-          "lastUpdate": "1717870044000"
-        },
-        {
-          "steam": "2102450",
-          "lastUpdate": "1718509789"
-        }
-      ],
-      "releaseDate": "2024-09-19"
-    },
-    {
       "name": "Dragon Age: The Veilguard",
       "sources": [
         {
@@ -80,6 +38,162 @@
         {
           "steam": "1771300",
           "lastUpdate": "1717167624"
+        }
+      ]
+    },
+    {
+      "name": "Star Wars Outlaws",
+      "sources": [
+        {
+          "twitter": "StarWarsOutlaws",
+          "lastUpdate": "1718050600000"
+        }
+      ],
+      "releaseDate": "2024-08-30"
+    },
+    {
+      "name": "Assassin's Creed: Shadows",
+      "sources": [
+        {
+          "twitter": "assassinscreed",
+          "lastUpdate": "1718048873000"
+        }
+      ],
+      "releaseDate": "2024-11-15"
+    },
+    {
+      "name": "Black Myth: Wukong",
+      "sources": [
+        {
+          "twitter": "BlackMythGame",
+          "lastUpdate": "1717795208000"
+        },
+        {
+          "steam": "2358720",
+          "lastUpdate": "1718096400"
+        }
+      ],
+      "releaseDate": "2024-08-20"
+    },
+    {
+      "name": "Age of Mythology: Retold",
+      "sources": [
+        {
+          "twitter": "Ageofmyth",
+          "lastUpdate": "1718050225000"
+        },
+        {
+          "steam": "1934680",
+          "lastUpdate": "1717978216"
+        }
+      ],
+      "releaseDate": "2024-09-04"
+    },
+    {
+      "name": "Avowed",
+      "sources": [
+        {
+          "twitter": "AvowedtheGame",
+          "lastUpdate": "1718041389000"
+        }
+      ]
+    },
+    {
+      "name": "TDU: Solar Crown",
+      "sources": [
+        {
+          "twitter": "testdrive",
+          "lastUpdate": "1717753055000"
+        },
+        {
+          "steam": "1249970",
+          "lastUpdate": "1717690489"
+        }
+      ],
+      "releaseDate": "2024-09-11"
+    },
+    {
+      "name": "Perfect Dark",
+      "sources": [
+        {
+          "twitter": "TheInitiative",
+          "lastUpdate": "1717954922000"
+        },
+        {
+          "steam": "2986410"
+        }
+      ]
+    },
+    {
+      "name": "South of Midnight",
+      "sources": [
+        {
+          "twitter": "CompulsionGames",
+          "lastUpdate": "1718314346000"
+        },
+        {
+          "steam": "1934570",
+          "lastUpdate": "1717963861"
+        }
+      ]
+    },
+    {
+      "name": "Atomfall",
+      "sources": [
+        {
+          "twitter": "AtomfallGame",
+          "lastUpdate": "1718197769000"
+        },
+        {
+          "steam": "801800",
+          "lastUpdate": "1718198466"
+        }
+      ]
+    },
+    {
+      "name": "Dune: Awakening",
+      "sources": [
+        {
+          "twitter": "DuneAwakening",
+          "lastUpdate": "1717798736000"
+        },
+        {
+          "steam": "1172710",
+          "lastUpdate": "1717798810"
+        }
+      ]
+    },
+    {
+      "name": "Battle Aces",
+      "sources": [
+        {
+          "twitter": "PlayBattleAces",
+          "lastUpdate": "1718309994000"
+        },
+        {
+          "steam": "2682180",
+          "lastUpdate": "1717801354"
+        }
+      ]
+    },
+    {
+      "name": "METAL GEAR SOLID Δ: SNAKE EATER",
+      "sources": [
+        {
+          "twitter": "Metalgear",
+          "lastUpdate": "1718204402000"
+        },
+        {
+          "steam": "2417610"
+        }
+      ]
+    },
+    {
+      "name": "Anno 117 Pax Romana",
+      "sources": [
+        {
+          "twitter": "ANNO_EN",
+          "lastUpdate": "1718295781000"
         }
       ]
     }
