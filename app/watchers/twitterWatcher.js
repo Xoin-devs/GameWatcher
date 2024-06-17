@@ -1,4 +1,4 @@
-const timeConstants = require('../timeConstants');
+const timeConstants = require('../constants/timeConstants.js');
 const { Browser, TweetParser, TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
 

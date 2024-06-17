@@ -1,15 +1,17 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder, ButtonStyle, ButtonBuilder } = require('discord.js');
 const { readConfig } = require('../../config');
+const CustomIds = require('../../constants/customIds');
+const CommandsName = require('../../constants/commandsName');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('configure')
+        .setName(CommandsName.CONFIGURE)
         .setDescription('Configure the bot'),
     async execute(interaction) {
         const games = readConfig().games;
 
         const selectMenu = new StringSelectMenuBuilder()
-            .setCustomId('game_select_menu')
+            .setCustomId(CustomIds.GAME_SELECT_MENU)
             .setPlaceholder('Select a game to configure')
             .addOptions(
                 games.map(game =>
@@ -20,12 +22,12 @@ module.exports = {
             );
 
         const addButton = new ButtonBuilder()
-            .setCustomId('add_game')
+            .setCustomId(CustomIds.ADD_GAME_BUTTON)
             .setLabel('Add a game')
             .setStyle(ButtonStyle.Primary);
 
         const removeButton = new ButtonBuilder()
-            .setCustomId('remove_game')
+            .setCustomId(CustomIds.REMOVE_GAME_BUTTON)
             .setLabel('Remove a game')
             .setStyle(ButtonStyle.Danger);
 
