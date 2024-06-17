@@ -15,7 +15,7 @@ class Logger {
             'WARN': '#FFA200',
             'ERROR': '#D30000',
             'DATE': '#803273',
-            'CALLER': '#CFD2D5',
+            'CALLER': '#AEB2B5',
         };
     }
 
