@@ -1,4 +1,4 @@
-const timeConstants = require('../timeConstants');
+const timeConstants = require('../constants/timeConstants');
 const { SteamWrapper } = require('../wrappers/steamWrapper');
 const { Watcher } = require('./watcher.js');
 
