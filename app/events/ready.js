@@ -11,7 +11,7 @@ module.exports = {
         console.log(`Ready! Logged in as ${client.user.tag}\n`);
         await Scheduler.init();
 
-        const watcherManager = new WatcherManager();
+        const watcherManager = WatcherManager.getInstance()
         await watcherManager.addWatcher(new SteamWatcher());
         await watcherManager.addWatcher(new TwitterWatcher());
         await watcherManager.startAll();

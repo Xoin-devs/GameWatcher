@@ -56,6 +56,19 @@
         }
       ],
       "releaseDate": "2024-09-19"
+    },
+    {
+      "name": "Dragon Age: The Veilguard",
+      "sources": [
+        {
+          "twitter": "dragonage",
+          "lastUpdate": "1718118006000"
+        },
+        {
+          "steam": "1845910",
+          "lastUpdate": "1718131140"
+        }
+      ]
     }
   ]
 }
