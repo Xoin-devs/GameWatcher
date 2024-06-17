@@ -19,7 +19,7 @@ class Watcher {
                     continue;
                 }
 
-                logger.info(`New news detected for game ${gameName}`);
+                logger.info(`Fresh news about ${gameName} has just been released`);
                 src.lastUpdate = latestDate;
 
                 try {
