@@ -62,8 +62,8 @@ module.exports = {
             await interaction.reply(message);
             await WatcherManager.getInstance().checkNewsForGame(gameName);
         } catch (error) {
-            const message = `Failed to register game ${gameName}: ${error.message}`;
-            logger.error(message);
+            const message = `Failed to register game ${gameName}`;
+            logger.error(message, error);
             await interaction.reply(message);
         }
     },

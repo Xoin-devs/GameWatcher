@@ -70,7 +70,7 @@ class TwitterWrapper {
 
                 setTimeout(() => resolve([]), TIMEOUT_DURATION);
             } catch (error) {
-                logger.error('Error getting tweets for account:', username);
+                logger.error('Error getting tweets for account:', username, "\n", error);
                 resolve([]);
             }
         });
@@ -95,7 +95,7 @@ class TwitterWrapper {
                     resolve(tweets);
                 }
             } catch (e) {
-                logger.error('Error parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
+                logger.warn('Trouble parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
                 resolve(null);
             }
         });
