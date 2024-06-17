@@ -9,6 +9,7 @@ module.exports = {
         .setDescription('Configure the bot'),
     async execute(interaction) {
         const games = readConfig().games;
+        games.sort((a, b) => a.name.localeCompare(b.name));
 
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId(CustomIds.GAME_SELECT_MENU)
@@ -21,11 +22,6 @@ module.exports = {
                 )
             );
 
-        const addButton = new ButtonBuilder()
-            .setCustomId(CustomIds.ADD_GAME_BUTTON)
-            .setLabel('Add a game')
-            .setStyle(ButtonStyle.Primary);
-
         const removeButton = new ButtonBuilder()
             .setCustomId(CustomIds.REMOVE_GAME_BUTTON)
             .setLabel('Remove a game')
@@ -35,7 +31,7 @@ module.exports = {
             .addComponents(selectMenu);
 
         const actionRowButton = new ActionRowBuilder()
-            .addComponents(addButton, removeButton);
+            .addComponents(removeButton);
 
         await interaction.reply({ content: 'Select a game to configure, add a new game or remove a game.', components: [actionRowSelection, actionRowButton] });
     },
