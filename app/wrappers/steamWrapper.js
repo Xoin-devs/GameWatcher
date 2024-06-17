@@ -12,7 +12,7 @@ class SteamWrapper {
             return newsItems.map(item => ({
                 id: item.gid,
                 title: item.title,
-                url: item.url,
+                url: item.url.replace(" ", "%20"),
                 contents: item.contents,
                 date: item.date,
                 image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`

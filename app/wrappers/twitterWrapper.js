@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 
 const TWITTER_BASE_URL = 'https://twitter.com';
 const TWITTER_API_URL = 'https://api.x.com/graphql/V7H0Ap3';
-const DEFAULT_TWEET_COUNT = 1;
+const DEFAULT_TWEET_COUNT = 4;
 const TIMEOUT_DURATION = 10_000;
 
 class Browser {
@@ -29,11 +29,10 @@ class Browser {
 
 class TweetParser {
     parse(tweet) {
-        const name = tweet.core.user_results.result.legacy.name;
         const lightTweet = {
-            name: name,
+            name: tweet.core.user_results.result.legacy.name,
             text: tweet.legacy.full_text,
-            tweet_url: `${TWITTER_BASE_URL}/${name}/status/${tweet.legacy.id_str}`,
+            tweet_url: `${TWITTER_BASE_URL}/${tweet.legacy.screen_name}/status/${tweet.legacy.id_str}`,
             media: tweet.legacy.extended_entities?.media.map(media => ({
                 type: media.type,
                 url: media.media_url_https,
@@ -89,6 +88,7 @@ class TwitterWrapper {
                         this.processInstructions(instructions, tweets);
                     }
 
+                    // TODO: when pinned, the tweet is considered the latest, investigate and fix this
                     tweets.sort((a, b) => new Date(b.date) - new Date(a.date));
                     tweets = tweets.slice(0, count);
                     resolve(tweets);

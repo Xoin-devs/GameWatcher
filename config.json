@@ -42,6 +42,20 @@
           "lastUpdate": "1718420040"
         }
       ]
+    },
+    {
+      "name": "Enotria: The Last Song",
+      "sources": [
+        {
+          "twitter": "enotriagame",
+          "lastUpdate": "1717870044000"
+        },
+        {
+          "steam": "2102450",
+          "lastUpdate": "1718509789"
+        }
+      ],
+      "releaseDate": "2024-09-19"
     }
   ]
 }

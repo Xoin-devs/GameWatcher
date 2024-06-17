@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const { readConfig, writeConfig } = require('./config');
 const client = require('./client');
+const { convert } = require('html-to-text');
 
 let BBCodeParser;
 let bbParser;
@@ -64,14 +65,14 @@ class MessageUtil {
         return color;
     }
 
-    sendTweetToAllChannels(tweet) {
+    async sendTweetToAllChannels(tweet) {
         const config = readConfig();
         for (let guild of config.guilds) {
-            this.sendTweetMessage(tweet, guild.channelId);
+            await this.sendTweetMessage(tweet, guild.channelId);
         }
     }
 
-    sendTweetMessage(tweet, channelId) {
+    async sendTweetMessage(tweet, channelId) {
         const embed = new EmbedBuilder()
             .setTitle(`${tweet.name} on X`)
             .setURL(tweet.tweet_url)
@@ -85,22 +86,30 @@ class MessageUtil {
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            channel.send({ embeds: [embed] });
+            await channel.send({ embeds: [embed] });
         }
     }
 
-    sendSteamNewsToAllChannels(newsItem) {
+    async sendSteamNewsToAllChannels(newsItem) {
         const config = readConfig();
         for (let guild of config.guilds) {
-            this.sendSteamNewsMessage(newsItem, guild.channelId);
+            await this.sendSteamNewsMessage(newsItem, guild.channelId);
         }
     }
 
-    sendSteamNewsMessage(newsItem, channelId) {
+    async sendSteamNewsMessage(newsItem, channelId) {
         const parserA = new BBCodeParser({});
         parserA.setCodes({});
 
-        const content = bbParser.parse(newsItem.contents);
+        let content = convert(newsItem.contents, {
+            wordwrap: null,
+            preserveNewlines: true,
+            selectors: [
+                { selector: 'a', options: { hideLinkHrefIfSameAsText: true } },
+                { selector: 'img', format: 'skip' }
+            ]
+        });
+        content = bbParser.parse(content);
 
         if (!content) {
             console.error('Content is empty or undefined');
@@ -122,7 +131,7 @@ class MessageUtil {
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            channel.send({ embeds: [embed] });
+            await channel.send({ embeds: [embed] });
         }
     }
 }

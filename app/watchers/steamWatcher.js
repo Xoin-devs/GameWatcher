@@ -18,7 +18,7 @@ class SteamWatcher extends Watcher {
     }
 
     async sendNews(news) {
-        this.messageUtil.sendSteamNewsToAllChannels(news);
+        await this.messageUtil.sendSteamNewsToAllChannels(news);
     }
 }
 

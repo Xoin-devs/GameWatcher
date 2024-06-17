@@ -21,7 +21,12 @@ class Watcher {
 
                     console.log(`New news detected for game ${game.name}`);
                     source.lastUpdate = latestNewsDate;
-                    this.sendNews(latestNews);
+
+                    try {
+                        await this.sendNews(latestNews);
+                    } catch (error) {
+                        console.error(error);
+                    }
                 }
             }
         }
