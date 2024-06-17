@@ -8,8 +8,8 @@ const logger = require('../../logger');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName(CommandsName.REMOVE_GAME)
-        .setDescription('Remove a registered game from the list of watched games')
+        .setName(CommandsName.GET_GAME)
+        .setDescription("Get a registered game's informations")
         .addStringOption(option =>
             option.setName(CommandsOption.NAME)
                 .setDescription('Name of the game')
@@ -27,18 +27,12 @@ module.exports = {
             return;
         }
 
-        config.games = config.games.filter(game => Utils.normalizeName(game.name) !== Utils.normalizeName(gameName));
+        const game = Utils.getGameByName(config, gameName);
+        const gameInfos = Utils.getGameInfos(game);
 
-        try {
-            writeConfig(config);
-            const message = `Removed game: ${gameName}`;
-            logger.info(message);
-            await interaction.reply(message);
-        } catch (error) {
-            const message = `Failed to remove game: ${gameName}`;
-            logger.error(message, error);
-            await interaction.reply(message);
-            return;
-        }
+        const gameInfosFormatted = `\`\`\`${gameInfos}\`\`\``;
+
+        logger.info(`Getting information about game: ${gameName} | ${gameInfos}`);
+        await interaction.reply(gameInfosFormatted);
     },
 };
