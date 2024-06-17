@@ -20,7 +20,7 @@ class Logger {
             const timestamp = chalk.hex(this.colors['DATE'])(new Date().toLocaleTimeString());
             const levelColored = chalk.hex(this.colors[level])(level);
             const caller = chalk.hex(this.colors['CALLER'])(this.getCallerFile());
-            const message = chalk.hex(this.colors[level])(args.join(' '));
+            const message = chalk.hex(this.colors[level])(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' '));
             console.log(`[${timestamp}] [${levelColored}] [${caller}]: ${message}`);
         }
     }
