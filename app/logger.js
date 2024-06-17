@@ -1,17 +1,31 @@
 const path = require('path');
 
+let chalk;
+import('chalk').then(module => {
+    chalk = module.default || module;
+}).catch(console.error);
+
 class Logger {
     constructor() {
         this.levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
         this.currentLevel = process.env.LOG_LEVEL || 'INFO';
+        this.colors = {
+            'DEBUG': '#389038',
+            'INFO': '#3A6F9E',
+            'WARN': '#FFA200',
+            'ERROR': '#D30000',
+            'DATE': '#803273',
+            'CALLER': '#CFD2D5',
+        };
     }
 
     log(level = 'INFO', ...args) {
         if (this.levels.indexOf(level) >= this.levels.indexOf(this.currentLevel)) {
-            const timestamp = new Date().toISOString();
-            const caller = this.getCallerFile();
-            const message = args.join(' ');
-            console.log(`[${timestamp}] [${level}] [${caller}]: ${message}`);
+            const timestamp = chalk.hex(this.colors['DATE'])(new Date().toLocaleTimeString());
+            const levelColored = chalk.hex(this.colors[level])(level);
+            const caller = chalk.hex(this.colors['CALLER'])(this.getCallerFile());
+            const message = chalk.hex(this.colors[level])(args.join(' '));
+            console.log(`[${timestamp}] [${levelColored}] [${caller}]: ${message}`);
         }
     }
 
@@ -46,7 +60,8 @@ class Logger {
 
         // stack[1] is this.getCallerFile()
         // stack[2] is our caller
-        return path.basename(stack[2].getFileName());
+        const caller = stack[2];
+        return `${path.basename(caller.getFileName())}:${caller.getLineNumber()}`;
     }
 }
 
