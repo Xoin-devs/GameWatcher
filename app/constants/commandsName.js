@@ -4,4 +4,5 @@ module.exports = {
     USER: 'user',
     SERVER: 'server',
     ADD_GAME: 'add-game',
+    REMOVE_GAME: 'remove-game',
 };
