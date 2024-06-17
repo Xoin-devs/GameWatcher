@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const logger = require('../logger');
 
 const TWITTER_BASE_URL = 'https://twitter.com';
 const TWITTER_API_URL = 'https://api.x.com/graphql/V7H0Ap3';
@@ -55,7 +56,7 @@ class TwitterWrapper {
                 const page = await this.browser.newPage();
                 await page.setRequestInterception(true);
 
-                console.log('Getting tweets for account:', username);
+                logger.info('Getting tweets for account:', username);
 
                 page.on('request', (request) => { request.continue(); });
                 page.on('response', async (response) => {
@@ -69,7 +70,7 @@ class TwitterWrapper {
 
                 setTimeout(() => resolve([]), TIMEOUT_DURATION);
             } catch (error) {
-                console.error(error);
+                logger.error('Error getting tweets for account:', username);
                 resolve([]);
             }
         });
@@ -80,7 +81,7 @@ class TwitterWrapper {
             try {
                 const url = response.url();
                 if (url.includes(TWITTER_API_URL)) {
-                    console.log('Intercepted response from twitter for account:', username);
+                    logger.debug('Intercepted response from twitter for account:', username);
                     const json = await response.json();
                     const instructions = json?.data?.user?.result?.timeline_v2?.timeline?.instructions;
                     let tweets = [];
@@ -94,7 +95,7 @@ class TwitterWrapper {
                     resolve(tweets);
                 }
             } catch (e) {
-                console.error('Error parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
+                logger.error('Error parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
                 resolve(null);
             }
         });

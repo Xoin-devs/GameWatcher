@@ -14,8 +14,7 @@ class TwitterWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source.twitter) {
-            const latestTweets = await this.twitterWrapper.getTweets(source.twitter);
-            return latestTweets[0];
+            return await this.twitterWrapper.getTweets(source.twitter);
         }
     }
 

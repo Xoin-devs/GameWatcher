@@ -3,6 +3,7 @@ const storage = require('node-persist');
 const client = require('./client.js');
 const { readConfig } = require('./config.js');
 const MessageUtil = require('./messageUtil.js');
+const logger = require('./logger');
 
 class Scheduler {
     static async init() {
@@ -49,7 +50,7 @@ class Scheduler {
         if (date <= new Date()) return;
 
         const cronExpression = this.getCronExpression(date);
-        console.log(`Scheduling message: ${message} at ${date}`);
+        logger.info(`Scheduling message: ${message} at ${date}`);
 
         cron.schedule(cronExpression, async () => {
             await this.sendMessageToChannels(channelIds, message, releaseDate);
@@ -72,12 +73,12 @@ class Scheduler {
                 const embed = MessageUtil.createReleaseMessage(message, this.toDiscordTimestamp(releaseDate), message);
                 try {
                     await channel.send({ embeds: [embed] });
-                    console.log(`Sent message: ${message}`);
+                    logger.info(`Sent message to channel ${channelId}: ${message}`);
                 } catch (error) {
-                    console.error(`Failed to send message to channel ${channelId}: ${error.message}`);
+                    logger.error(`Failed to send message to channel ${channelId}: ${error.message}`);
                 }
             } else {
-                console.log(`Channel not found: ${channelId}`);
+                logger.error(`Channel not found: ${channelId}`);
             }
         }
     }
@@ -107,7 +108,7 @@ class Scheduler {
     static async scheduleGameRemindersIfNeeded(jobs, guilds, game) {
         const existingJob = jobs.find(job => job.reminders.some(reminder => reminder.message.includes(game.name)));
         if (!existingJob) {
-            console.log(`Scheduling reminders for game: ${game.name}`);
+            logger.info(`Scheduling reminders for game: ${game.name}`);
             const channelIds = guilds.map(guild => guild.channelId);
             await this.scheduleReminders(game.releaseDate, channelIds, game.name);
         }
@@ -127,7 +128,7 @@ class Scheduler {
             await this.scheduleMessage(releaseDate.toISOString(), reminderDate, channelIds, reminder.message);
         }
 
-        console.log(`Scheduled reminders for ${game} on ${releaseDate}`);
+        logger.info(`Scheduled reminders for ${game} on ${releaseDate}`);
     }
 
     static calculateDateOffset(baseDate, offsetDays) {
@@ -148,7 +149,7 @@ class Scheduler {
             return job;
         }).filter(job => job.reminders.length > 0);
         await this.setJobs(jobs);
-        console.log(`Cancelled jobs for game: ${game}`);
+        logger.info(`Cancelled jobs for game: ${game}`);
     }
 }
 

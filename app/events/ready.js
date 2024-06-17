@@ -3,12 +3,13 @@ const Scheduler = require('../scheduler');
 const { WatcherManager } = require('../watchers/watcherManager');
 const { SteamWatcher } = require('../watchers/steamWatcher');
 const { TwitterWatcher } = require('../watchers/twitterWatcher');
+const logger = require('../logger');
 
 module.exports = {
     name: Events.ClientReady,
     once: true,
     async execute(client) {
-        console.log(`Ready! Logged in as ${client.user.tag}\n`);
+        logger.info(`Logged in as ${client.user.tag}\n`);
         await Scheduler.init();
 
         const watcherManager = WatcherManager.getInstance()

@@ -111,11 +111,6 @@ class MessageUtil {
         });
         content = bbParser.parse(content);
 
-        if (!content) {
-            console.error('Content is empty or undefined');
-            return;
-        }
-
         const embed = new EmbedBuilder()
             .setTitle(newsItem.title)
             .setURL(newsItem.url)
@@ -123,11 +118,6 @@ class MessageUtil {
             .setColor(MessageUtil.getRandomColor())
             .setImage(newsItem.image)
             .setFooter({ text: `Steam News` });
-
-        if (!embed) {
-            console.error('Embed is empty or undefined');
-            return;
-        }
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {

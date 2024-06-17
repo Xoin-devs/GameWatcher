@@ -4,6 +4,7 @@ const CommandsOption = require('../../constants/commandsOption');
 const Utils = require('../../utils');
 const { readConfig, writeConfig } = require('../../config');
 const { WatcherManager } = require('../../watchers/watcherManager');
+const logger = require('../../logger');
 
 function createNewGame(interaction, gameName) {
     const twitterSource = interaction.options.getString(CommandsOption.TWITTER);
@@ -57,12 +58,12 @@ module.exports = {
         try {
             writeConfig(config);
             const message = `Game ${gameName} added successfully!`;
-            console.log(message);
+            logger.info(message);
             await interaction.reply(message);
             await WatcherManager.getInstance().checkNewsForGame(gameName);
         } catch (error) {
             const message = `Failed to register game ${gameName}: ${error.message}`;
-            console.error(message);
+            logger.error(message);
             await interaction.reply(message);
         }
     },

@@ -12,8 +12,7 @@ class SteamWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source.steam) {
-            const latestNews = await this.steamWrapper.getNews(source.steam);
-            return latestNews[0];
+            return await this.steamWrapper.getNews(source.steam);
         }
     }
 

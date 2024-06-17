@@ -1,6 +1,7 @@
 const { readConfig, writeConfig } = require('../config');
 const MessageUtil = require('../messageUtil');
 const Utils = require('../utils');
+const logger = require('../logger');
 
 class Watcher {
     constructor(checkInterval) {
@@ -9,21 +10,22 @@ class Watcher {
     }
 
     async checkNewsForSources(sources, gameName) {
-        for (let source of sources) {
-            const latestNews = await this.fetchNews(source);
-            if (latestNews) {
-                const latestNewsDate = new Date(latestNews.date).getTime().toString();
-                if (source.lastUpdate === latestNewsDate) {
+        for (let src of sources) {
+            const latestNews = await this.fetchNews(src);
+            if (latestNews && latestNews.length > 0) {
+                const latest = latestNews[0];
+                const latestDate = new Date(latest.date).getTime().toString();
+                if (src.lastUpdate === latestDate) {
                     continue;
                 }
 
-                console.log(`New news detected for game ${gameName}`);
-                source.lastUpdate = latestNewsDate;
+                logger.info(`New news detected for game ${gameName}`);
+                src.lastUpdate = latestDate;
 
                 try {
-                    await this.sendNews(latestNews);
+                    await this.sendNews(latest);
                 } catch (error) {
-                    console.error(error);
+                    logger.error(`Error sending news for game ${gameName}`);
                 }
             }
         }
@@ -44,7 +46,7 @@ class Watcher {
 
         const game = config.games.find(g => Utils.normalizeName(g.name) === Utils.normalizeName(gameName));
         if (!game) {
-            console.log(`Game ${gameName} not found.`);
+            logger.error(`Game ${gameName} not found.`);
             return;
         }
 

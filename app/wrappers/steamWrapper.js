@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../logger');
 
 class SteamWrapper {
     constructor() {
@@ -9,6 +10,9 @@ class SteamWrapper {
         try {
             const response = await axios.get(`${this.steamNewsUrl}${appId}&count=${count}`);
             const newsItems = response.data.appnews.newsitems;
+
+            logger.info(`Gettings news for app ${appId} on steam`);
+
             return newsItems.map(item => ({
                 id: item.gid,
                 title: item.title,
@@ -18,7 +22,7 @@ class SteamWrapper {
                 image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/header.jpg`
             }));
         } catch (error) {
-            console.error(error);
+            logger.error(`Error fetching news for app ${appId}`);
         }
     }
 }

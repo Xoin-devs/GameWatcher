@@ -1,5 +1,6 @@
 const { Events } = require('discord.js');
 const CustomIds = require('../constants/customIds');
+const logger = require('../logger');
 
 const addGameButtonHandler = require('../handlers/addGame');
 const removeGameButtonHandler = require('../handlers/removeGame');
@@ -17,7 +18,7 @@ async function handleSlashCommand(interaction) {
     const command = interaction.client.commands.get(interaction.commandName);
 
     if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
+        logger.error(`No command matching ${interaction.commandName} was found.`);
         return;
     }
 
@@ -28,7 +29,7 @@ async function executeSlashCommand(interaction, command) {
     try {
         await command.execute(interaction);
     } catch (error) {
-        console.error(error);
+        logger.error(`Error executing command ${interaction.commandName}: ${error.message}`);
         await handleCommandError(interaction);
     }
 }
@@ -49,7 +50,7 @@ async function handleButtonOrMenu(interaction) {
     if (handler) {
         await handler(interaction);
     } else {
-        console.error(`No handler for customId ${interaction.customId}`);
+        logger.error(`No handler for customId ${interaction.customId}`);
     }
 }
 // #endregion
