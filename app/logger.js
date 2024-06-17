@@ -1,9 +1,5 @@
 const path = require('path');
-
-let chalk;
-import('chalk').then(module => {
-    chalk = module.default || module;
-}).catch(console.error);
+const chalk = require('chalk');
 
 class Logger {
     constructor() {
