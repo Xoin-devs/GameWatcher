@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { readConfig, writeConfig } = require('./config');
 const client = require('./client');
 const { convert } = require('html-to-text');
@@ -83,13 +83,14 @@ class MessageUtil {
     }
 
     async sendTweetMessage(tweet, channelId) {
+        const twitterIcon = new AttachmentBuilder('./assets/icon_twitter.png');
         const content = MessageUtil.truncateContent(tweet.text, '... Read more on Twitter');
         const embed = new EmbedBuilder()
             .setTitle(`${tweet.name} on X`)
             .setURL(tweet.tweet_url)
             .setDescription(content)
             .setColor(PrettyColors.BLUE_TWITTER)
-            .setFooter({ text: `Twitter` });
+            .setFooter({ text: 'Twitter', iconURL: 'attachment://icon_twitter.png' });
 
         if (tweet.media.length > 0) {
             embed.setImage(tweet.media[0].url);
@@ -97,7 +98,7 @@ class MessageUtil {
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send({ embeds: [embed], files: [twitterIcon] });
         }
     }
 
@@ -109,6 +110,8 @@ class MessageUtil {
     }
 
     async sendSteamNewsMessage(newsItem, channelId) {
+        const steamIcon = new AttachmentBuilder('./assets/icon_steam.png');
+
         const parserA = new BBCodeParser({});
         parserA.setCodes({});
 
@@ -129,11 +132,11 @@ class MessageUtil {
             .setDescription(content)
             .setColor(PrettyColors.BLUE_STEAM)
             .setImage(newsItem.image)
-            .setFooter({ text: `Steam News` });
+            .setFooter({ text: `Steam`, iconURL: 'attachment://icon_steam.png' });
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send({ embeds: [embed], files: [steamIcon] });
         }
     }
 }
