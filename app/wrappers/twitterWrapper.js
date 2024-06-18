@@ -89,13 +89,18 @@ class TwitterWrapper {
                         this.processInstructions(instructions, tweets);
                     }
 
-                    // TODO: when pinned, the tweet is considered the latest, investigate and fix this
+                    // When searching through some accounts, the response can be heavy and random
+                    // With 100s of tweets that are nor ordered by date (some years old tweets can appear)
+                    // it's done to avoid scraping, so there is nothing we can do about it
+                    // we will have tweets that are not up to date, but it's better than nothing
+
                     tweets.sort((a, b) => new Date(b.date) - new Date(a.date));
                     tweets = tweets.slice(0, count);
                     resolve(tweets);
                 }
             } catch (e) {
                 logger.warn('Trouble parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
+                logger.warn(e);
                 resolve(null);
             }
         });
