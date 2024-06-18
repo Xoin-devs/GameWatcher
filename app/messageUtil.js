@@ -2,6 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const { readConfig, writeConfig } = require('./config');
 const client = require('./client');
 const { convert } = require('html-to-text');
+const PrettyColors = require('./constants/prettyColors');
 
 let BBCodeParser;
 let bbParser;
@@ -77,7 +78,7 @@ class MessageUtil {
             .setTitle(`${tweet.name} on X`)
             .setURL(tweet.tweet_url)
             .setDescription(tweet.text)
-            .setColor(MessageUtil.getRandomColor())
+            .setColor(PrettyColors.TWITTER_BLUE)
             .setFooter({ text: `Twitter` });
 
         if (tweet.media.length > 0) {
@@ -115,7 +116,7 @@ class MessageUtil {
             .setTitle(newsItem.title)
             .setURL(newsItem.url)
             .setDescription(content)
-            .setColor(MessageUtil.getRandomColor())
+            .setColor(PrettyColors.STEAM_BLUE)
             .setImage(newsItem.image)
             .setFooter({ text: `Steam News` });
 
