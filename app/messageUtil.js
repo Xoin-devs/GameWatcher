@@ -66,6 +66,13 @@ class MessageUtil {
         return color;
     }
 
+    static truncateContent(content, maxLength, endMessage) {
+        if (content.length <= maxLength) {
+            return content;
+        }
+        return content.substring(0, maxLength - endMessage.length) + endMessage;
+    }
+
     async sendTweetToAllChannels(tweet) {
         const config = readConfig();
         for (let guild of config.guilds) {
@@ -74,11 +81,12 @@ class MessageUtil {
     }
 
     async sendTweetMessage(tweet, channelId) {
+        const content = MessageUtil.truncateContent(tweet.text, 4096, '... Read more on Twitter');
         const embed = new EmbedBuilder()
             .setTitle(`${tweet.name} on X`)
             .setURL(tweet.tweet_url)
-            .setDescription(tweet.text)
-            .setColor(PrettyColors.TWITTER_BLUE)
+            .setDescription(content)
+            .setColor(PrettyColors.BLUE_TWITTER)
             .setFooter({ text: `Twitter` });
 
         if (tweet.media.length > 0) {
@@ -111,12 +119,13 @@ class MessageUtil {
             ]
         });
         content = bbParser.parse(content);
+        content = MessageUtil.truncateContent(content, 4096, '... Read more on Steam');
 
         const embed = new EmbedBuilder()
             .setTitle(newsItem.title)
             .setURL(newsItem.url)
             .setDescription(content)
-            .setColor(PrettyColors.STEAM_BLUE)
+            .setColor(PrettyColors.BLUE_STEAM)
             .setImage(newsItem.image)
             .setFooter({ text: `Steam News` });
 
