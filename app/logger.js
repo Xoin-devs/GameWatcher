@@ -1,17 +1,18 @@
 const path = require('path');
 const chalk = require('chalk');
+const PrettyColors = require('./constants/prettyColors');
 
 class Logger {
     constructor() {
         this.levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
         this.currentLevel = process.env.LOG_LEVEL || 'INFO';
         this.colors = {
-            'DEBUG': '#389038',
-            'INFO': '#3A6F9E',
-            'WARN': '#FFA200',
-            'ERROR': '#D30000',
-            'DATE': '#803273',
-            'CALLER': '#AEB2B5',
+            'DEBUG': PrettyColors.DEBUG,
+            'INFO': PrettyColors.INFO,
+            'WARN': PrettyColors.WARN,
+            'ERROR': PrettyColors.ERROR,
+            'DATE': PrettyColors.PURPLE,
+            'CALLER': PrettyColors.GREY,
         };
     }
 
