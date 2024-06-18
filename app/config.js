@@ -9,7 +9,8 @@ if (result.error) {
     throw result.error;
 }
 
-const configPath = path.join(__dirname, '..', 'config.json');
+const configPath = path.join(__dirname, '..', `config.${env}.json`);
+
 const configSchema = Joi.object({
     guilds: Joi.array().items(
         Joi.object({

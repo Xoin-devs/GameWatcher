@@ -1,0 +1,24 @@
+{
+  "guilds": [
+    {
+      "guildId": "960898690258714634",
+      "channelId": "960898690258714637"
+    }
+  ],
+  "games": [
+    {
+      "name": "TDU: Solar Crown",
+      "sources": [
+        {
+          "twitter": "testdrive",
+          "lastUpdate": "1717753055000"
+        },
+        {
+          "steam": "1249970",
+          "lastUpdate": "1717690489"
+        }
+      ],
+      "releaseDate": "2024-09-11"
+    }
+  ]
+}
