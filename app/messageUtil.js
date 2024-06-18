@@ -3,6 +3,7 @@ const { readConfig, writeConfig } = require('./config');
 const client = require('./client');
 const { convert } = require('html-to-text');
 const PrettyColors = require('./constants/prettyColors');
+const DiscordConstants = require('./constants/discordConstants');
 
 let BBCodeParser;
 let bbParser;
@@ -66,7 +67,8 @@ class MessageUtil {
         return color;
     }
 
-    static truncateContent(content, maxLength, endMessage) {
+    static truncateContent(content, endMessage) {
+        const maxLength = DiscordConstants.MESSASGE_MAX_LENGTH;
         if (content.length <= maxLength) {
             return content;
         }
@@ -81,7 +83,7 @@ class MessageUtil {
     }
 
     async sendTweetMessage(tweet, channelId) {
-        const content = MessageUtil.truncateContent(tweet.text, 4096, '... Read more on Twitter');
+        const content = MessageUtil.truncateContent(tweet.text, '... Read more on Twitter');
         const embed = new EmbedBuilder()
             .setTitle(`${tweet.name} on X`)
             .setURL(tweet.tweet_url)
@@ -119,7 +121,7 @@ class MessageUtil {
             ]
         });
         content = bbParser.parse(content);
-        content = MessageUtil.truncateContent(content, 4096, '... Read more on Steam');
+        content = MessageUtil.truncateContent(content, '... Read more on Steam');
 
         const embed = new EmbedBuilder()
             .setTitle(newsItem.title)
