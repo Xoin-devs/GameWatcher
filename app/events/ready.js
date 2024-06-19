@@ -1,7 +1,8 @@
 const { Events } = require('discord.js');
 const Scheduler = require('../scheduler');
 const { WatcherManager } = require('../watchers/watcherManager');
-const { SteamWatcher } = require('../watchers/steamWatcher');
+const { SteamExternalWatcher } = require('../watchers/steamExternalWatcher');
+const { SteamInternalWatcher } = require('../watchers/steamInternalWatcher');
 const { TwitterWatcher } = require('../watchers/twitterWatcher');
 const logger = require('../logger');
 
@@ -13,7 +14,8 @@ module.exports = {
         await Scheduler.init();
 
         const watcherManager = WatcherManager.getInstance()
-        await watcherManager.addWatcher(new SteamWatcher());
+        await watcherManager.addWatcher(new SteamExternalWatcher());
+        await watcherManager.addWatcher(new SteamInternalWatcher());
         await watcherManager.addWatcher(new TwitterWatcher());
         await watcherManager.startAll();
     },

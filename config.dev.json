@@ -11,14 +11,34 @@
       "sources": [
         {
           "twitter": "testdrive",
-          "lastUpdate": "1717753055000"
+          "lastUpdate": "1718295256000"
         },
         {
-          "steam": "1249970",
-          "lastUpdate": "1717690489"
+          "steam_internal": "1249970",
+          "lastUpdate": "1717690489000"
+        },
+        {
+          "steam_external": "1249970",
+          "lastUpdate": "1717499251"
         }
       ],
-      "releaseDate": "2024-09-11"
+      "releaseDate": "2024-09-10"
+    },
+    {
+      "name": "South of Midnight",
+      "sources": [
+        {
+          "twitter": "CompulsionGames",
+          "lastUpdate": "1718314346000"
+        },
+        {
+          "steam_internal": "1934570",
+          "lastUpdate": "1717963861000"
+        },
+        {
+          "steam_external": "1934570"
+        }
+      ]
     }
   ]
 }

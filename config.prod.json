@@ -20,11 +20,15 @@
       "sources": [
         {
           "twitter": "dragonage",
-          "lastUpdate": "1718118006000"
+          "lastUpdate": "1718306335000"
         },
         {
-          "steam": "1845910",
-          "lastUpdate": "1718131140"
+          "lastUpdate": "1718131140000",
+          "steam_internal": "1845910"
+        },
+        {
+          "lastUpdate": "1718131140",
+          "steam_external": "1845910"
         }
       ]
     },
@@ -36,8 +40,12 @@
           "lastUpdate": "1718290839000"
         },
         {
-          "steam": "1771300",
-          "lastUpdate": "1717167624"
+          "lastUpdate": "1717167624000",
+          "steam_internal": "1771300"
+        },
+        {
+          "lastUpdate": "1717167624",
+          "steam_external": "1771300"
         }
       ]
     },
@@ -69,8 +77,12 @@
           "lastUpdate": "1717795208000"
         },
         {
-          "steam": "2358720",
-          "lastUpdate": "1718096400"
+          "lastUpdate": "1717795940000",
+          "steam_internal": "2358720"
+        },
+        {
+          "lastUpdate": "1715110386",
+          "steam_external": "2358720"
         }
       ],
       "releaseDate": "2024-08-20"
@@ -83,8 +95,12 @@
           "lastUpdate": "1718050225000"
         },
         {
-          "steam": "1934680",
-          "lastUpdate": "1717978216"
+          "lastUpdate": "1717955152000",
+          "steam_internal": "1934680"
+        },
+        {
+          "lastUpdate": "1717978216",
+          "steam_external": "1934680"
         }
       ],
       "releaseDate": "2024-09-04"
@@ -103,11 +119,15 @@
       "sources": [
         {
           "twitter": "testdrive",
-          "lastUpdate": "1717753055000"
+          "lastUpdate": "1718295256000"
         },
         {
-          "steam": "1249970",
-          "lastUpdate": "1717690489"
+          "lastUpdate": "1717690489000",
+          "steam_internal": "1249970"
+        },
+        {
+          "lastUpdate": "1717499251",
+          "steam_external": "1249970"
         }
       ],
       "releaseDate": "2024-09-11"
@@ -120,7 +140,10 @@
           "lastUpdate": "1717954922000"
         },
         {
-          "steam": "2986410"
+          "steam_internal": "2986410"
+        },
+        {
+          "steam_external": "2986410"
         }
       ]
     },
@@ -132,8 +155,12 @@
           "lastUpdate": "1718314346000"
         },
         {
-          "steam": "1934570",
-          "lastUpdate": "1717963861"
+          "lastUpdate": "1717963861000",
+          "steam_internal": "1934570"
+        },
+        {
+          "lastUpdate": "1717963861",
+          "steam_external": "1934570"
         }
       ]
     },
@@ -145,8 +172,12 @@
           "lastUpdate": "1718197769000"
         },
         {
-          "steam": "801800",
-          "lastUpdate": "1718198466"
+          "lastUpdate": "1718198466000",
+          "steam_internal": "801800"
+        },
+        {
+          "lastUpdate": "1718198466",
+          "steam_external": "801800"
         }
       ]
     },
@@ -155,11 +186,15 @@
       "sources": [
         {
           "twitter": "DuneAwakening",
-          "lastUpdate": "1717798736000"
+          "lastUpdate": "1718292991000"
         },
         {
-          "steam": "1172710",
-          "lastUpdate": "1717798810"
+          "lastUpdate": "1717798810000",
+          "steam_internal": "1172710"
+        },
+        {
+          "lastUpdate": "1717772228",
+          "steam_external": "1172710"
         }
       ]
     },
@@ -171,8 +206,12 @@
           "lastUpdate": "1718309994000"
         },
         {
-          "steam": "2682180",
-          "lastUpdate": "1717801354"
+          "lastUpdate": "1718759736000",
+          "steam_internal": "2682180"
+        },
+        {
+          "lastUpdate": "1717801354",
+          "steam_external": "2682180"
         }
       ]
     },
@@ -184,7 +223,10 @@
           "lastUpdate": "1718204402000"
         },
         {
-          "steam": "2417610"
+          "steam_internal": "2417610"
+        },
+        {
+          "steam_external": "2417610"
         }
       ]
     },
@@ -201,8 +243,12 @@
       "name": "ForstPunk 2",
       "sources": [
         {
-          "steam": "1601580",
-          "lastUpdate": "1718200408"
+          "lastUpdate": "1718200408000",
+          "steam_internal": "1601580"
+        },
+        {
+          "lastUpdate": "1717586072",
+          "steam_external": "1601580"
         }
       ]
     }

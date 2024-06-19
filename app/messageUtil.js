@@ -75,6 +75,21 @@ class MessageUtil {
         return content.substring(0, maxLength - endMessage.length) + endMessage;
     }
 
+    static getIconNameFromFeedname(feedname) {
+        switch (feedname) {
+            case 'PC Gamer':
+                return 'icon_pc_gamer.png';
+            case 'VG247':
+                return 'icon_vg247.png';
+            case 'RPS':
+                return 'icon_rps.png';
+            case 'PCGamesN':
+                return 'icon_pcgamesn.png';
+            default:
+                return 'icon_steam.png';
+        }
+    }
+
     async sendTweetToAllChannels(tweet) {
         const config = readConfig();
         for (let guild of config.guilds) {
@@ -110,10 +125,8 @@ class MessageUtil {
     }
 
     async sendSteamNewsMessage(newsItem, channelId) {
-        const steamIcon = new AttachmentBuilder('./assets/icon_steam.png');
-
-        const parserA = new BBCodeParser({});
-        parserA.setCodes({});
+        // const parserA = new BBCodeParser({});
+        // parserA.setCodes({});
 
         let content = convert(newsItem.contents, {
             wordwrap: null,
@@ -123,8 +136,11 @@ class MessageUtil {
                 { selector: 'img', format: 'skip' }
             ]
         });
-        content = bbParser.parse(content);
+        // content = bbParser.parse(content);
         content = MessageUtil.truncateContent(content, '... Read more on Steam');
+
+        const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
+        const icon = new AttachmentBuilder(`./assets/${iconName}`);
 
         const embed = new EmbedBuilder()
             .setTitle(newsItem.title)
@@ -132,11 +148,11 @@ class MessageUtil {
             .setDescription(content)
             .setColor(PrettyColors.BLUE_STEAM)
             .setImage(newsItem.image)
-            .setFooter({ text: `Steam`, iconURL: 'attachment://icon_steam.png' });
+            .setFooter({ text: newsItem.feedname, iconURL: `attachment://${iconName}` });
 
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            await channel.send({ embeds: [embed], files: [steamIcon] });
+            await channel.send({ embeds: [embed], files: [icon] });
         }
     }
 }

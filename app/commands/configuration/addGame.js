@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const CommandsName = require('../../constants/commandsName');
 const CommandsOption = require('../../constants/commandsOption');
+const SourceType = require('../../constants/sourceType');
 const Utils = require('../../utils');
 const { readConfig, writeConfig } = require('../../config');
 const { WatcherManager } = require('../../watchers/watcherManager');
@@ -16,8 +17,11 @@ function createNewGame(interaction, gameName) {
         sources: [],
     };
 
-    if (twitterSource) newGame.sources.push({ twitter: twitterSource });
-    if (steamSource) newGame.sources.push({ steam: steamSource });
+    if (twitterSource) newGame.sources.push({ [SourceType.TWITTER]: twitterSource });
+    if (steamSource) {
+        newGame.sources.push({ [SourceType.STEAM_INTERNAL]: steamSource });
+        newGame.sources.push({ [SourceType.STEAM_EXTERNAL]: steamSource });
+    }
     if (releaseDate) newGame.releaseDate = Utils.parseDate(releaseDate);
 
     return newGame;

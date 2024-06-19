@@ -1,6 +1,7 @@
 const timeConstants = require('../constants/timeConstants.js');
 const { Browser, TweetParser, TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
+const SourceType = require('../constants/sourceType');
 
 class TwitterWatcher extends Watcher {
     constructor() {
@@ -13,8 +14,8 @@ class TwitterWatcher extends Watcher {
     }
 
     async fetchNews(source) {
-        if (source.twitter) {
-            return await this.twitterWrapper.getTweets(source.twitter);
+        if (source[SourceType.TWITTER]) {
+            return await this.twitterWrapper.getTweets(source[SourceType.TWITTER]);
         }
     }
 

@@ -1,3 +1,5 @@
+const SourceType = require('./constants/sourceType');
+
 function normalizeName(name) {
     return name.toLowerCase().replace(/\s+/g, '');
 }
@@ -26,16 +28,18 @@ function getGameInfos(game) {
     }
     if (game.sources) {
         game.sources.forEach(source => {
-            if (source.twitter) {
-                gameInfo.push(`twitter: ${source.twitter}`);
+            if (source[SourceType.TWITTER]) {
+                gameInfo.push(`twitter: ${source[SourceType.TWITTER]}`);
             }
-            if (source.steam) {
-                gameInfo.push(`steam: ${source.steam}`);
+            if (source[SourceType.STEAM_INTERNAL]) {
+                gameInfo.push(`steam: ${source[SourceType.STEAM_INTERNAL]}`);
             }
         });
     }
     if (game.releaseDate) {
-        gameInfo.push(`release_date: ${game.releaseDate}`);
+        const date = new Date(game.releaseDate);
+        const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        gameInfo.push(`release_date: ${formattedDate}`);
     }
     return gameInfo.join(' ');
 }
