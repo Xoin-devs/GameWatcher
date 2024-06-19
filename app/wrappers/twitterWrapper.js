@@ -13,7 +13,10 @@ class Browser {
     }
 
     async init() {
-        this.browser = await puppeteer.launch({ headless: true });
+        this.browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
     }
 
     async newPage() {
