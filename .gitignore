@@ -3,5 +3,5 @@
 /node_modules
 .env.prod
 .env.dev
-/config.dev.json
-/config.prod.json
+.config.dev.json
+.config.prod.json
