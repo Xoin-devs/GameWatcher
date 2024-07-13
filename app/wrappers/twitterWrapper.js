@@ -71,7 +71,10 @@ class TwitterWrapper {
 
                 await page.goto(`${TWITTER_BASE_URL}/${username}`, { waitUntil: 'networkidle2' });
 
-                setTimeout(() => resolve([]), TIMEOUT_DURATION);
+                setTimeout(() => {
+                    logger.warn('Timeout reached for account:', username);
+                    resolve([]);
+                }, TIMEOUT_DURATION);
             } catch (error) {
                 logger.error('Error getting tweets for account:', username, "\n", error);
                 resolve([]);

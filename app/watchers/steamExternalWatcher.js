@@ -5,7 +5,7 @@ const SourceType = require('../constants/sourceType');
 
 class SteamExternalWatcher extends Watcher {
     constructor() {
-        super(timeConstants.FIVE_HOURS);
+        super(timeConstants.TWO_HOURS + timeConstants.THIRTY_MINUTES);
         this.steamExternalWrapper = new SteamExternalWrapper();
     }
 

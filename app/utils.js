@@ -44,6 +44,23 @@ function getGameInfos(game) {
     return gameInfo.join(' ');
 }
 
+function msToTime(ms) {
+    let seconds = Math.floor(ms / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+    let days = Math.floor(hours / 24);
+
+    hours = hours % 24;
+    minutes = minutes % 60;
+    seconds = seconds % 60;
+
+    return {
+        days: days,
+        hours: hours,
+        minutes: minutes
+    };
+}
+
 module.exports = {
     normalizeName,
     parseDate,
@@ -51,4 +68,5 @@ module.exports = {
     getGameSuggestionsByName,
     getGameByName,
     getGameInfos,
+    msToTime
 };

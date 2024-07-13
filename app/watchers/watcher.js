@@ -5,8 +5,29 @@ const logger = require('../logger');
 
 class Watcher {
     constructor(checkInterval) {
+        if (checkInterval <= 0) {
+            logger.error('Check interval must be greater than 0');
+            throw new Error('Check interval must be greater than 0');
+        }
+
         this.checkInterval = checkInterval;
         this.messageUtil = new MessageUtil();
+    }
+
+    getCronExpression() {
+        const time = Utils.msToTime(this.checkInterval);
+        logger.info(`Watcher is cron expression is ${time.days} days, ${time.hours} hours and ${time.minutes} minutes`);
+
+        const day = time.days === 0 ? '*' : `*/${time.days}`;
+        const hour = time.hours === 0 ? '*' : `*/${time.hours}`;
+
+        const cronExpression = `${time.minutes} ${hour} ${day} * *`;
+        if (!cron.validate(cronExpression)) {
+            logger.error('Invalid cron expression', cronExpression);
+            throw new Error('Invalid cron expression');
+        } else {
+            return cronExpression;
+        }
     }
 
     async checkNewsForSources(sources, gameName) {
@@ -54,7 +75,6 @@ class Watcher {
 
         writeConfig(config);
     }
-
 
     async fetchNews(source) {
         throw new Error('You have to implement the method fetchNews!');

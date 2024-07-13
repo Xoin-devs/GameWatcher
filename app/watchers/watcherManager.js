@@ -1,3 +1,7 @@
+const logger = require('../logger');
+
+cron = require('node-cron');
+
 class WatcherManager {
     constructor() {
         if (WatcherManager.instance) {
@@ -15,10 +19,11 @@ class WatcherManager {
 
     async startAll() {
         for (let watcher of this.watchers) {
-            await watcher.checkNews();
-            setInterval(async () => {
+            const cronExpression = watcher.getCronExpression();
+            logger.warn(`Starting watcher with cron expression ${cronExpression}`);
+            cron.schedule(cronExpression, async () => {
                 await watcher.checkNews();
-            }, watcher.checkInterval);
+            });
         }
     }
 

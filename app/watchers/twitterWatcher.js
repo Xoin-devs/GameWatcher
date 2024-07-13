@@ -19,7 +19,7 @@ class TwitterWatcher extends Watcher {
         }
     }
 
-    async sendNews(news) {
+    async sendNews(news) {  
         await this.messageUtil.sendTweetToAllChannels(news);
     }
 }
