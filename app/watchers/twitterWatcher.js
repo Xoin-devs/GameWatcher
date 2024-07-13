@@ -1,16 +1,16 @@
 const timeConstants = require('../constants/timeConstants.js');
-const { Browser, TweetParser, TwitterWrapper } = require('../wrappers/twitterWrapper.js');
+const { TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
 const SourceType = require('../constants/sourceType');
 
 class TwitterWatcher extends Watcher {
     constructor() {
-        super(timeConstants.ONE_HOUR);
-        this.twitterWrapper = new TwitterWrapper(new Browser(), new TweetParser());
+        super(timeConstants.THIRTY_MINUTES + timeConstants.TEN_MINUTES + timeConstants.FIFTEEN_MINUTES + timeConstants.ONE_MINUTES);
+        this.twitterWrapper = new TwitterWrapper();
     }
 
     async init() {
-        await this.twitterWrapper.browser.init();
+        await this.twitterWrapper.init();
     }
 
     async fetchNews(source) {
@@ -19,7 +19,7 @@ class TwitterWatcher extends Watcher {
         }
     }
 
-    async sendNews(news) {  
+    async sendNews(news) {
         await this.messageUtil.sendTweetToAllChannels(news);
     }
 }

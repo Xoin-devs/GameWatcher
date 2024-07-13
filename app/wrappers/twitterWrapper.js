@@ -2,34 +2,10 @@ const puppeteer = require('puppeteer');
 const logger = require('../logger');
 
 const TWITTER_BASE_URL = 'https://twitter.com';
-const TWITTER_API_URL = 'https://api.x.com/graphql/V7H0Ap3';
+const TWITTER_API_URL = 'https://api.x.com/graphql/';
+const TWITTER_TWEET_TAG_URL = 'UserTweets';
 const DEFAULT_TWEET_COUNT = 4;
 const TIMEOUT_DURATION = 10_000;
-
-class Browser {
-    constructor() {
-        this.browser = null;
-        this.page = null;
-    }
-
-    async init() {
-        this.browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-    }
-
-    async newPage() {
-        this.page = await this.browser.newPage();
-        return this.page;
-    }
-
-    static async create() {
-        const browser = new Browser();
-        await browser.init();
-        return browser;
-    }
-}
 
 class TweetParser {
     parse(tweet) {
@@ -48,30 +24,40 @@ class TweetParser {
 }
 
 class TwitterWrapper {
-    constructor(browser, parser) {
-        this.browser = browser;
-        this.parser = parser;
+    constructor() {
+        this.parser = new TweetParser();
+        this.browser = null;
+    }
+
+    async init() {
+        this.browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
     }
 
     async getTweets(username, count = DEFAULT_TWEET_COUNT) {
         return new Promise(async (resolve, reject) => {
             try {
+                let timeoutID = null;
                 const page = await this.browser.newPage();
                 await page.setRequestInterception(true);
 
                 logger.info('Getting tweets for account:', username);
 
-                page.on('request', (request) => { request.continue(); });
+                page.on('request', (request) => request.continue());
                 page.on('response', async (response) => {
                     const tweets = await this.handleResponse(response, username, count);
                     if (tweets) {
+                        clearTimeout(timeoutID);
+                        await page.close();
                         resolve(tweets);
                     }
                 });
 
                 await page.goto(`${TWITTER_BASE_URL}/${username}`, { waitUntil: 'networkidle2' });
 
-                setTimeout(() => {
+                timeoutID = setTimeout(() => {
                     logger.warn('Timeout reached for account:', username);
                     resolve([]);
                 }, TIMEOUT_DURATION);
@@ -86,7 +72,7 @@ class TwitterWrapper {
         return new Promise(async (resolve, reject) => {
             try {
                 const url = response.url();
-                if (url.includes(TWITTER_API_URL)) {
+                if (url.includes(TWITTER_API_URL) && url.includes(TWITTER_TWEET_TAG_URL)) {
                     logger.debug('Intercepted response from twitter for account:', username);
                     const json = await response.json();
                     const instructions = json?.data?.user?.result?.timeline_v2?.timeline?.instructions;
@@ -103,6 +89,8 @@ class TwitterWrapper {
                     tweets.sort((a, b) => new Date(b.date) - new Date(a.date));
                     tweets = tweets.slice(0, count);
                     resolve(tweets);
+                } else {
+                    resolve(null);
                 }
             } catch (e) {
                 logger.warn('Trouble parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
@@ -162,4 +150,4 @@ class TwitterWrapper {
     }
 }
 
-module.exports = { Browser, TweetParser, TwitterWrapper };
+module.exports = { TweetParser, TwitterWrapper };

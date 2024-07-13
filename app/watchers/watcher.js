@@ -34,9 +34,12 @@ class Watcher {
         for (let src of sources) {
             const latestNews = await this.fetchNews(src);
             if (latestNews && latestNews.length > 0) {
+                logger.debug(`Found ${latestNews.length} news for game ${gameName}`);
+
                 const latest = latestNews[0];
                 const latestDate = new Date(latest.date).getTime().toString();
                 if (src.lastUpdate === latestDate) {
+                    logger.debug(`No recent news for game ${gameName}`);
                     continue;
                 }
 
