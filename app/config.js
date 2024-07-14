@@ -33,43 +33,46 @@ const configSchema = Joi.object({
 });
 
 function readConfig() {
-    if (fs.existsSync(configPath)) {
-        const rawConfig = fs.readFileSync(configPath);
-        const parsedConfig = JSON.parse(rawConfig);
-        parsedConfig.games.forEach(game => {
-            if (game.releaseDate) {
-                const date = new Date(game.releaseDate);
-                if (isNaN(date.getTime())) { // Check if the date is invalid
-                    delete game.releaseDate; // Remove the releaseDate property if the date is invalid
-                } else {
-                    game.releaseDate = date;
-                }
-            }
-        });
-        const { value: config, error } = configSchema.validate(parsedConfig);
-        if (error) {
-            throw new Error([`Invalid config: ${error.message}`]);
-        }
-        return config;
-    } else {
-        return {
-            guilds: [],
-            games: []
-        };
+    if (!fs.existsSync(configPath)) {
+        return { guilds: [], games: [] };
     }
+
+    const rawConfig = fs.readFileSync(configPath);
+    const parsedConfig = JSON.parse(rawConfig);
+
+    parsedConfig.games.forEach(game => {
+        if (game.releaseDate) {
+            const date = new Date(game.releaseDate);
+            if (isNaN(date.getTime())) {
+                delete game.releaseDate;
+            } else {
+                game.releaseDate = date;
+            }
+        }
+    });
+
+    const { value: config, error } = configSchema.validate(parsedConfig);
+    if (error) {
+        throw new Error(`Invalid config: ${error.message}`);
+    }
+
+    return config;
 }
 
 function writeConfig(config) {
     const configToWrite = { ...config };
+
     configToWrite.games.forEach(game => {
         if (game.releaseDate) {
             game.releaseDate = game.releaseDate.toISOString().split('T')[0];
         }
     });
+
     const { error } = configSchema.validate(configToWrite);
     if (error) {
         throw new Error([`Invalid config: ${error.message}`]);
     }
+    
     fs.writeFileSync(configPath, JSON.stringify(configToWrite, null, 2));
 }
 

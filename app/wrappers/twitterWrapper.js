@@ -9,7 +9,7 @@ const TIMEOUT_DURATION = 10_000;
 
 class TweetParser {
     parse(tweet) {
-        const lightTweet = {
+        return {
             name: tweet.core.user_results.result.legacy.name,
             text: tweet.legacy.full_text,
             tweet_url: `${TWITTER_BASE_URL}/${tweet.legacy.screen_name}/status/${tweet.legacy.id_str}`,
@@ -19,7 +19,6 @@ class TweetParser {
             })) || [],
             date: new Date(tweet.legacy.created_at).toISOString()
         };
-        return lightTweet;
     }
 }
 
@@ -37,7 +36,7 @@ class TwitterWrapper {
     }
 
     async getTweets(username, count = DEFAULT_TWEET_COUNT) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             try {
                 let timeoutID = null;
                 const page = await this.browser.newPage();
@@ -69,7 +68,7 @@ class TwitterWrapper {
     }
 
     handleResponse(response, username, count) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             try {
                 const url = response.url();
                 if (url.includes(TWITTER_API_URL) && url.includes(TWITTER_TWEET_TAG_URL)) {
@@ -87,8 +86,7 @@ class TwitterWrapper {
                     // we will have tweets that are not up to date, but it's better than nothing
 
                     tweets.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    tweets = tweets.slice(0, count);
-                    resolve(tweets);
+                    resolve(tweets.slice(0, count));
                 } else {
                     resolve(null);
                 }
@@ -115,8 +113,7 @@ class TwitterWrapper {
     processPinEntry(instruction, tweets) {
         const tweet = instruction.entry.content.itemContent.tweet_results?.result;
         if (tweet) {
-            const lightTweet = this.parser.parse(tweet);
-            tweets.push(lightTweet);
+            tweets.push(this.parser.parse(tweet));
         }
     }
 
@@ -135,8 +132,7 @@ class TwitterWrapper {
     processTimelineItem(entry, tweets) {
         const tweet = entry.content.itemContent.tweet_results?.result;
         if (tweet) {
-            const lightTweet = this.parser.parse(tweet);
-            tweets.push(lightTweet);
+            tweets.push(this.parser.parse(tweet));
         }
     }
 
@@ -144,8 +140,7 @@ class TwitterWrapper {
         const tweetsModule = entry.content.items;
         const tweet = tweetsModule[0].item.itemContent.tweet_results?.result;
         if (tweet) {
-            const lightTweet = this.parser.parse(tweet);
-            tweets.push(lightTweet);
+            tweets.push(this.parser.parse(tweet));
         }
     }
 }

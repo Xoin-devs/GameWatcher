@@ -5,6 +5,7 @@ const CommandsName = require('../../constants/commandsName');
 const CommandsOption = require('../../constants/commandsOption');
 const Utils = require('../../utils');
 const logger = require('../../logger');
+const ReleaseManager = require('../../releaseManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,6 +32,7 @@ module.exports = {
 
         try {
             writeConfig(config);
+            ReleaseManager.getInstance().removeCronJob(gameName);
             const message = `Removed game: ${gameName}`;
             logger.info(message);
             await interaction.reply(message);

@@ -18,9 +18,9 @@ class WatcherManager {
     }
 
     async startAll() {
-        for (let watcher of this.watchers) {
+        for (const watcher of this.watchers) {
             const cronExpression = watcher.getCronExpression();
-            logger.warn(`Starting watcher with cron expression ${cronExpression}`);
+            logger.info(`Starting watcher with cron expression ${cronExpression}`);
             cron.schedule(cronExpression, async () => {
                 await watcher.checkNews();
             });
@@ -28,7 +28,7 @@ class WatcherManager {
     }
 
     async checkNewsForGame(gameName) {
-        for (let watcher of this.watchers) {
+        for (const watcher of this.watchers) {
             await watcher.checkNewsForGame(gameName);
         }
     }

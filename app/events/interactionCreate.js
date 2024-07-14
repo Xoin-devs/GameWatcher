@@ -13,7 +13,7 @@ const customIdHandlers = {
     // add other handlers here
 };
 
-// #region Slash Command Handling
+// #region SlashCommand Handling
 async function handleSlashCommand(interaction) {
     const command = interaction.client.commands.get(interaction.commandName);
 

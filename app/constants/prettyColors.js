@@ -10,4 +10,13 @@ module.exports = {
 
     PURPLE: "#803273",
     GREY: "#AEB2B5",
+
+    GREEN: "#00A000",
+    RED: "#D30000",
+    ORANGE: "#FFA500",
+    YELLOW: "#FFFF00",
+    CYAN: "#00FFFF",
+    MAGENTA: "#FF00FF",
+    WHITE: "#FFFFFF",
+    BLACK: "#000000"
 }

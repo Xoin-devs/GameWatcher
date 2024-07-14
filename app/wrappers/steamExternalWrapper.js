@@ -27,6 +27,7 @@ class SteamExternalWrapper {
             }));
         } catch (error) {
             logger.error(`Error fetching news for app ${appId}`);
+            return [];
         }
     }
 }

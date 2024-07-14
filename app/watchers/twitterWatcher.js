@@ -5,7 +5,7 @@ const SourceType = require('../constants/sourceType');
 
 class TwitterWatcher extends Watcher {
     constructor() {
-        super(timeConstants.THIRTY_MINUTES + timeConstants.TEN_MINUTES + timeConstants.FIFTEEN_MINUTES + timeConstants.ONE_MINUTES);
+        super(timeConstants.ONE_HOUR);
         this.twitterWrapper = new TwitterWrapper();
     }
 

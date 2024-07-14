@@ -16,7 +16,7 @@ class Watcher {
 
     getCronExpression() {
         const time = Utils.msToTime(this.checkInterval);
-        logger.info(`Watcher is cron expression is ${time.days} days, ${time.hours} hours and ${time.minutes} minutes`);
+        logger.debug(`Watcher configuration is ${time.days} days, ${time.hours} hours and ${time.minutes} minutes`);
 
         const day = time.days === 0 ? '*' : `*/${time.days}`;
         const hour = time.hours === 0 ? '*' : `*/${time.hours}`;
@@ -25,13 +25,13 @@ class Watcher {
         if (!cron.validate(cronExpression)) {
             logger.error('Invalid cron expression', cronExpression);
             throw new Error('Invalid cron expression');
-        } else {
-            return cronExpression;
         }
+
+        return cronExpression;
     }
 
     async checkNewsForSources(sources, gameName) {
-        for (let src of sources) {
+        for (const src of sources) {
             const latestNews = await this.fetchNews(src);
             if (latestNews && latestNews.length > 0) {
                 logger.debug(`Found ${latestNews.length} news for game ${gameName}`);
