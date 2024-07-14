@@ -1,5 +1,4 @@
 const { Events } = require('discord.js');
-const Scheduler = require('../scheduler');
 const { WatcherManager } = require('../watchers/watcherManager');
 const { SteamExternalWatcher } = require('../watchers/steamExternalWatcher');
 const { SteamInternalWatcher } = require('../watchers/steamInternalWatcher');
