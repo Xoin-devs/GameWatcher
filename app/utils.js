@@ -1,3 +1,4 @@
+const CommandsOption = require('./constants/commandsOption');
 const SourceType = require('./constants/sourceType');
 
 function normalizeName(name) {
@@ -61,6 +62,39 @@ function msToTime(ms) {
     };
 }
 
+function getGameDetailsFromInteraction(interaction) {
+    const twitterSource = interaction.options.getString(CommandsOption.TWITTER);
+    const steamSource = interaction.options.getString(CommandsOption.STEAM);
+    const releaseDate = interaction.options.getString(CommandsOption.RELEASE_DATE);
+
+    return { twitterSource, steamSource, releaseDate };
+}
+
+function buildGameObject(gameName, newDetails, existingGame = {}) {
+    const newGame = {
+        name: gameName,
+        sources: existingGame.sources || [],
+        releaseDate: existingGame.releaseDate,
+    };
+
+    if (newDetails.twitterSource) {
+        newGame.sources = newGame.sources.filter(source => !source[SourceType.TWITTER]);
+        newGame.sources.push({ [SourceType.TWITTER]: newDetails.twitterSource });
+    }
+
+    if (newDetails.steamSource) {
+        newGame.sources = newGame.sources.filter(source => !source[SourceType.STEAM_INTERNAL] && !source[SourceType.STEAM_EXTERNAL]);
+        newGame.sources.push({ [SourceType.STEAM_INTERNAL]: newDetails.steamSource });
+        newGame.sources.push({ [SourceType.STEAM_EXTERNAL]: newDetails.steamSource });
+    }
+
+    if (newDetails.releaseDate) {
+        newGame.releaseDate = parseDate(newDetails.releaseDate);
+    }
+
+    return newGame;
+}
+
 module.exports = {
     normalizeName,
     parseDate,
@@ -68,5 +102,7 @@ module.exports = {
     getGameSuggestionsByName,
     getGameByName,
     getGameInfos,
-    msToTime
+    msToTime,
+    getGameDetailsFromInteraction,
+    buildGameObject
 };

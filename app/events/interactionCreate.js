@@ -2,6 +2,7 @@ const { Events } = require('discord.js');
 const CustomIds = require('../constants/customIds');
 const logger = require('../logger');
 
+// #region UNUSED - FOR EXAMPLE ONLY
 const addGameButtonHandler = require('../handlers/addGame');
 const removeGameButtonHandler = require('../handlers/removeGame');
 const gameSelectMenuHandler = require('../handlers/gameSelect');
@@ -12,6 +13,7 @@ const customIdHandlers = {
     [CustomIds.GAME_SELECT_MENU]: gameSelectMenuHandler,
     // add other handlers here
 };
+// #endregion
 
 // #region SlashCommand Handling
 async function handleSlashCommand(interaction) {

@@ -1,20 +1,21 @@
-const { SlashCommandBuilder } = require('discord.js');
-const CommandsName = require('../../constants/commandsName');
-const CommandsOption = require('../../constants/commandsOption');
-const Utils = require('../../utils');
 const { readConfig, writeConfig } = require('../../config');
-const { WatcherManager } = require('../../watchers/watcherManager');
+const { SlashCommandBuilder } = require("discord.js");
+const CommandHelper = require('../../commandHelper');
+const CommandsName = require("../../constants/commandsName");
+const CommandsOption = require("../../constants/commandsOption");
+const Utils = require('../../utils');
 const logger = require('../../logger');
 const ReleaseManager = require('../../releaseManager');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName(CommandsName.ADD_GAME)
-        .setDescription('Add a new game to the list')
+        .setName(CommandsName.UPDATE_GAME)
+        .setDescription("Update a game in the list")
         .addStringOption(option =>
             option.setName(CommandsOption.NAME)
                 .setDescription('Name of the game')
-                .setRequired(true))
+                .setRequired(true)
+                .setAutocomplete(true))
         .addStringOption(option =>
             option.setName(CommandsOption.TWITTER)
                 .setDescription('Twitter source of the game')
@@ -27,30 +28,35 @@ module.exports = {
             option.setName(CommandsOption.RELEASE_DATE)
                 .setDescription('Release date of the game (DD/MM/YYYY)')
                 .setRequired(false)),
+    async autocomplete(interaction) {
+        CommandHelper.autoCompleteGameName(interaction);
+    },
     async execute(interaction) {
         const config = readConfig();
         const gameName = interaction.options.getString(CommandsOption.NAME);
 
-        if (Utils.isGameRegistered(config, gameName)) {
-            await interaction.reply('This game is already registered');
+        if (!Utils.isGameRegistered(config, gameName)) {
+            await interaction.reply('This game is not registered');
             return;
         }
 
+        const existingGame = config.games.find(game => game.name === gameName);
         const gameDetails = Utils.getGameDetailsFromInteraction(interaction);
-        const newGame = Utils.buildGameObject(gameName, gameDetails);
+        const updatedGame = Utils.buildGameObject(gameName, gameDetails, existingGame);
 
-        config.games.push(newGame);
+        const gameIndex = config.games.findIndex(game => game.name === gameName);
+        config.games[gameIndex] = updatedGame;
 
         try {
             writeConfig(config);
-            const message = `Game ${gameName} added successfully!`;
+            const message = `Game ${gameName} updated successfully!`;
             logger.info(message);
             await interaction.reply(message);
-            ReleaseManager.getInstance().addOrUpdateCronJob(newGame);
+            ReleaseManager.getInstance().addOrUpdateCronJob(updatedGame);
         } catch (error) {
-            const message = `Failed to register game ${gameName}`;
+            const message = `Failed to update game ${gameName}`;
             logger.error(message, error);
             await interaction.reply(message);
         }
-    },
-};
+    }
+}

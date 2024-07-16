@@ -12,7 +12,6 @@ async function autoCompleteGameName(interaction) {
     await interaction.respond(
         suggestions.map(game => ({ name: game.name, value: game.name })),
     );
-
 }
 
 module.exports = {
