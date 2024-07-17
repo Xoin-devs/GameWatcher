@@ -6,7 +6,8 @@ const logger = require('../../logger');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.HERE)
-        .setDescription("Tell the bot to spread news in this channel"),
+        .setDescription("Tell the bot to spread news in this channel")
+        .setDMPermission(false),
     async execute(interaction) {
         const channelId = interaction.channel.id;
         const guildId = interaction.guild.id;

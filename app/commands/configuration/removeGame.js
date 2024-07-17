@@ -11,6 +11,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.REMOVE_GAME)
         .setDescription('Remove a registered game from the list of watched games')
+        .setDMPermission(false)
         .addStringOption(option =>
             option.setName(CommandsOption.NAME)
                 .setDescription('Name of the game')

@@ -6,7 +6,8 @@ const CommandsName = require('../../constants/commandsName');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.CONFIGURE)
-        .setDescription('Configure the bot'),
+        .setDescription('Configure the bot')
+        .setDMPermission(false),
     async execute(interaction) {
         const games = readConfig().games;
         games.sort((a, b) => a.name.localeCompare(b.name));

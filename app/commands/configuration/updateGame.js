@@ -11,6 +11,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.UPDATE_GAME)
         .setDescription("Update a game in the list")
+        .setDMPermission(false)
         .addStringOption(option =>
             option.setName(CommandsOption.NAME)
                 .setDescription('Name of the game')

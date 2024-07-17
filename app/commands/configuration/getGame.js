@@ -10,6 +10,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.GET_GAME)
         .setDescription("Get a registered game's informations")
+        .setDMPermission(false)
         .addStringOption(option =>
             option.setName(CommandsOption.NAME)
                 .setDescription('Name of the game')
