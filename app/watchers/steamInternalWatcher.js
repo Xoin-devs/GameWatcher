@@ -3,7 +3,6 @@ const logger = require('../logger.js');
 const { SteamInternalWrapper } = require('../wrappers/steamInternalWrapper.js');
 const { Watcher } = require('./watcher.js');
 const SourceType = require('../constants/sourceType');
-const logger = require('../logger');
 
 class SteamInternalWatcher extends Watcher {
     constructor() {
