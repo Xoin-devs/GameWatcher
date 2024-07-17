@@ -31,7 +31,18 @@ class TwitterWrapper {
     async init() {
         this.browser = await puppeteer.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-session-crashed-bubble',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
+                '--noerrdialogs',
+                '--disable-gpu'
+            ]
         });
     }
 
@@ -50,18 +61,22 @@ class TwitterWrapper {
                     if (tweets) {
                         clearTimeout(timeoutID);
                         await page.close();
+                        logger.debug('Closing and sending');
                         resolve(tweets);
                     }
                 });
 
-                await page.goto(`${TWITTER_BASE_URL}/${username}`, { waitUntil: 'networkidle2' });
+                page.goto(`${TWITTER_BASE_URL}/${username}`);
+                logger.debug('Going to page!');
 
-                timeoutID = setTimeout(() => {
+                timeoutID = setTimeout(async () => {
                     logger.warn('Timeout reached for account:', username);
+                    await page.close();
                     resolve([]);
                 }, TIMEOUT_DURATION);
             } catch (error) {
-                logger.error('Error getting tweets for account:', username, "\n", error);
+                logger.error('Error getting tweets for account:', username);
+                logger.error(error.message);
                 resolve([]);
             }
         });

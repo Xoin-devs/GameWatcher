@@ -3,6 +3,7 @@ const logger = require('../logger.js');
 const { SteamInternalWrapper } = require('../wrappers/steamInternalWrapper.js');
 const { Watcher } = require('./watcher.js');
 const SourceType = require('../constants/sourceType');
+const logger = require('../logger');
 
 class SteamInternalWatcher extends Watcher {
     constructor() {
@@ -14,6 +15,7 @@ class SteamInternalWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source[SourceType.STEAM_INTERNAL]) {
+            logger.debug(`Checking news for source ${source}`);
             return await this.steamInternalWrapper.getNews(source[SourceType.STEAM_INTERNAL]);
         }
     }

@@ -33,6 +33,13 @@ class WatcherManager {
         }
     }
 
+    // Mainly for debugging purposes
+    async checkNews() {
+        for (const watcher of this.watchers) {
+            await watcher.checkNews();
+        }
+    }
+
     static getInstance() {
         if (!WatcherManager.instance) {
             WatcherManager.instance = new WatcherManager();

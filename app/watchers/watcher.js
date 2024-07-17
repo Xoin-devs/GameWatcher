@@ -32,25 +32,29 @@ class Watcher {
 
     async checkNewsForSources(sources, gameName) {
         for (const src of sources) {
-            const latestNews = await this.fetchNews(src);
-            if (latestNews && latestNews.length > 0) {
-                logger.debug(`Found ${latestNews.length} news for game ${gameName}`);
+            try {
+                const latestNews = await this.fetchNews(src);
+                if (latestNews && latestNews.length > 0) {
+                    logger.debug(`Found ${latestNews.length} news for game ${gameName}`);
 
-                const latest = latestNews[0];
-                const latestDate = new Date(latest.date).getTime().toString();
-                if (src.lastUpdate === latestDate) {
-                    logger.debug(`No recent news for game ${gameName}`);
-                    continue;
+                    const latest = latestNews[0];
+                    const latestDate = new Date(latest.date).getTime().toString();
+                    if (src.lastUpdate === latestDate) {
+                        logger.debug(`No recent news for game ${gameName}`);
+                        continue;
+                    }
+
+                    logger.info(`Fresh news about ${gameName} has just been released`);
+                    src.lastUpdate = latestDate;
+
+                    try {
+                        await this.sendNews(latest);
+                    } catch (error) {
+                        logger.error(`Error sending news for game ${gameName}`, error);
+                    }
                 }
-
-                logger.info(`Fresh news about ${gameName} has just been released`);
-                src.lastUpdate = latestDate;
-
-                try {
-                    await this.sendNews(latest);
-                } catch (error) {
-                    logger.error(`Error sending news for game ${gameName}`, error);
-                }
+            } catch (error) {
+                logger.error(`Error fetching news for source: ${JSON.stringify(src)} for game ${gameName}`, error);
             }
         }
     }
