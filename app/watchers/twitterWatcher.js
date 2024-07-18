@@ -16,8 +16,8 @@ class TwitterWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source[SourceType.TWITTER]) {
-            logger.debug(`Checking news for source ${source}`);
-            return tweets = await this.twitterWrapper.getTweets(source[SourceType.TWITTER]);
+            logger.debug(`Checking news for source ${JSON.stringify(source)}`);
+            return await this.twitterWrapper.getTweets(source[SourceType.TWITTER]);
         }
     }
 

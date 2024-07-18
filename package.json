@@ -22,7 +22,7 @@
     "js-bbcode-parser": "^5.1.0",
     "node-cron": "^3.0.3",
     "node-persist": "^4.0.1",
-    "puppeteer": "^22.11.0",
+    "puppeteer": "^22.13.1",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {

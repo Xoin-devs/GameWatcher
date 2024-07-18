@@ -14,7 +14,7 @@ class SteamInternalWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source[SourceType.STEAM_INTERNAL]) {
-            logger.debug(`Checking news for source ${source}`);
+            logger.debug(`Checking news for source ${JSON.stringify(source)}`);
             return await this.steamInternalWrapper.getNews(source[SourceType.STEAM_INTERNAL]);
         }
     }

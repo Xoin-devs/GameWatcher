@@ -54,7 +54,8 @@ class Watcher {
                     }
                 }
             } catch (error) {
-                logger.error(`Error fetching news for source: ${JSON.stringify(src)} for game ${gameName}`, error);
+                logger.error(`Error fetching news for game ${gameName}`);
+                logger.error(`Error: ${error.message}`);
             }
         }
     }

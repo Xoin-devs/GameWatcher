@@ -29,6 +29,23 @@ class TwitterWrapper {
     }
 
     async init() {
+        await this.initBrowser();
+    }
+
+    async closeBrowser() {
+        logger.info('Closing puppeteer browser!');
+        if (this.browser) {
+            const pages = await this.browser.pages()
+            for (const page of pages) {
+                await page.close();
+            }
+            await this.browser.close();
+            this.browser = null;
+        }
+    }
+
+    async initBrowser() {
+        logger.info('Initializing browser');
         this.browser = await puppeteer.launch({
             headless: true,
             args: [
@@ -39,7 +56,6 @@ class TwitterWrapper {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
                 '--noerrdialogs',
                 '--disable-gpu'
             ]
@@ -48,36 +64,43 @@ class TwitterWrapper {
 
     async getTweets(username, count = DEFAULT_TWEET_COUNT) {
         return new Promise(async (resolve) => {
+            logger.info('Getting tweets for account:', username);
+
             try {
                 let timeoutID = null;
+
+                if (!this.browser || !this.browser.connected) {
+                    logger.error('Browser not initialized or connected');
+                    await this.initBrowser();
+                }
+
                 const page = await this.browser.newPage();
-                await page.setRequestInterception(true);
 
-                logger.info('Getting tweets for account:', username);
-
-                page.on('request', (request) => request.continue());
                 page.on('response', async (response) => {
                     const tweets = await this.handleResponse(response, username, count);
                     if (tweets) {
+                        logger.debug('Closing and sending');
                         clearTimeout(timeoutID);
                         await page.close();
-                        logger.debug('Closing and sending');
-                        resolve(tweets);
+                        await this.closeBrowser();
+                        return resolve(tweets);
                     }
                 });
 
-                page.goto(`${TWITTER_BASE_URL}/${username}`);
+                await page.goto(`${TWITTER_BASE_URL}/${username}`, { waitUntil: 'load' });
                 logger.debug('Going to page!');
 
                 timeoutID = setTimeout(async () => {
                     logger.warn('Timeout reached for account:', username);
                     await page.close();
-                    resolve([]);
+                    await this.closeBrowser();
+                    return resolve([]);
                 }, TIMEOUT_DURATION);
             } catch (error) {
                 logger.error('Error getting tweets for account:', username);
                 logger.error(error.message);
-                resolve([]);
+                await this.closeBrowser();
+                return resolve([]);
             }
         });
     }
@@ -101,14 +124,14 @@ class TwitterWrapper {
                     // we will have tweets that are not up to date, but it's better than nothing
 
                     tweets.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    resolve(tweets.slice(0, count));
+                    return resolve(tweets.slice(0, count));
                 } else {
-                    resolve(null);
+                    return resolve(null);
                 }
             } catch (e) {
                 logger.warn('Trouble parsing response. It can happen, IT IS NOT A PROBLEM IF THERE IS ANOTHER REQUEST AFTER');
                 logger.warn(e);
-                resolve(null);
+                return resolve(null);
             }
         });
     }
