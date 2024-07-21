@@ -1,3 +1,7 @@
+// Script from https://discordjs.guide/interactions/registering-slash-commands.html#deploying-commands
+// This script will deploy all the commands in your commands directory to your Discord application.
+// Standalone script. Do not run this script while your bot is running, as it will not work.
+
 const { REST, Routes } = require('discord.js');
 const { token, clientId } = require('./config');
 const fs = require('node:fs');

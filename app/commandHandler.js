@@ -4,21 +4,18 @@ const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const client = require('./client');
 const logger = require('./logger');
 
-client.commands = new Collection();
-client.cooldowns = new Collection();
-
-const foldersPath = path.join(__dirname, "commands");
-const commandFolders = fs.readdirSync(foldersPath);
-
-const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
-
 function initCommandsLocally() {
+    client.commands = new Collection();
+    client.cooldowns = new Collection();
+
     registerCommandsLocally();
     registerEventsHandling();
 }
 
 function registerCommandsLocally() {
+    const foldersPath = path.join(__dirname, "commands");
+    const commandFolders = fs.readdirSync(foldersPath);
+
     for (const folder of commandFolders) {
         const commandsPath = path.join(foldersPath, folder);
         const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
@@ -35,6 +32,9 @@ function registerCommandsLocally() {
 }
 
 function registerEventsHandling() {
+    const eventsPath = path.join(__dirname, 'events');
+    const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+
     for (const file of eventFiles) {
         const filePath = path.join(eventsPath, file);
         const event = require(filePath);
@@ -45,6 +45,5 @@ function registerEventsHandling() {
         }
     }
 }
-
 
 module.exports = { initCommandsLocally };
