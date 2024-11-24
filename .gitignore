@@ -5,3 +5,4 @@
 .env.dev
 config.dev.json
 config.prod.json
+publish.bat
