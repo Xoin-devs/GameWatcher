@@ -10,7 +10,10 @@ async function autoCompleteGameName(interaction) {
 
     logger.debug(`Found ${suggestions.length} suggestions for ${inputGameName}`);
     await interaction.respond(
-        suggestions.map(game => ({ name: game.name, value: game.name })),
+        suggestions.map(game => {
+            const truncatedName = game.name.length > 25 ? game.name.substring(0, 25) : game.name;
+            return { name: truncatedName, value: truncatedName };
+        }),
     );
 }
 

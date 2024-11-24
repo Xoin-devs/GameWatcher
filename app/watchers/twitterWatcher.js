@@ -2,7 +2,6 @@ const timeConstants = require('../constants/timeConstants.js');
 const { TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
 const SourceType = require('../constants/sourceType');
-const logger = require('../logger');
 
 class TwitterWatcher extends Watcher {
     constructor() {
@@ -16,7 +15,7 @@ class TwitterWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source[SourceType.TWITTER]) {
-            logger.debug(`Checking news for source ${JSON.stringify(source)}`);
+            this.logger.debug(`Checking news for source ${JSON.stringify(source)}`);
             return await this.twitterWrapper.getTweets(source[SourceType.TWITTER]);
         }
     }

@@ -35,9 +35,13 @@ class TwitterWrapper {
     async closeBrowser() {
         logger.info('Closing puppeteer browser!');
         if (this.browser) {
-            const pages = await this.browser.pages()
+            const pages = await this.browser.pages();
             for (const page of pages) {
-                await page.close();
+                try {
+                    await page.close();
+                } catch (error) {
+                    logger.warn('Error closing page:', error.message);
+                }
             }
             await this.browser.close();
             this.browser = null;
@@ -92,7 +96,11 @@ class TwitterWrapper {
 
                 timeoutID = setTimeout(async () => {
                     logger.warn('Timeout reached for account:', username);
-                    await page.close();
+                    try {
+                        await page.close();
+                    } catch (error) {
+                        logger.warn('Error closing page:', error.message);
+                    }
                     await this.closeBrowser();
                     return resolve([]);
                 }, TIMEOUT_DURATION);

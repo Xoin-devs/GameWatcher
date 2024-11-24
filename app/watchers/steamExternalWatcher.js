@@ -2,7 +2,6 @@ const timeConstants = require('../constants/timeConstants.js');
 const { SteamExternalWrapper } = require('../wrappers/steamExternalWrapper.js');
 const { Watcher } = require('./watcher.js');
 const SourceType = require('../constants/sourceType');
-const logger = require('../logger');
 
 class SteamExternalWatcher extends Watcher {
     constructor() {
@@ -14,7 +13,7 @@ class SteamExternalWatcher extends Watcher {
 
     async fetchNews(source) {
         if (source[SourceType.STEAM_EXTERNAL]) {
-            logger.debug(`Checking news for source ${JSON.stringify(source)}`);
+            this.logger.debug(`Checking news for source ${JSON.stringify(source)}`);
             return await this.steamExternalWrapper.getNews(source[SourceType.STEAM_EXTERNAL]);
         }
     }

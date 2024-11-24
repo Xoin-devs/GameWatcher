@@ -12,6 +12,7 @@ class Watcher {
 
         this.checkInterval = checkInterval;
         this.messageUtil = new MessageUtil();
+        this.logger = logger;
     }
 
     getCronExpression() {
