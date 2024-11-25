@@ -47,6 +47,14 @@ class DatabaseManager {
                 FOREIGN KEY (game_id) REFERENCES games(id),
                 PRIMARY KEY (game_id, type)
             );
+
+            CREATE TABLE IF NOT EXISTS guild_games (
+                guild_id TEXT,
+                game_id INTEGER,
+                FOREIGN KEY (guild_id) REFERENCES guilds(id),
+                FOREIGN KEY (game_id) REFERENCES games(id),
+                PRIMARY KEY (guild_id, game_id)
+            );
         `);
     }
 
@@ -64,28 +72,41 @@ class DatabaseManager {
     }
 
     // Game operations
-    async addGame(name, sources = [], releaseDate = null) {
+    async addGame(guildId, name, sources = [], releaseDate = null) {
         // Validate date format if provided
         if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);
         }
 
-        const result = await this.db.run(
-            'INSERT INTO games (name, release_date) VALUES (?, ?)',
-            [name, releaseDate]
-        );
-        const gameId = result.lastID;
+        let game = await this.getGame(guildId, name);
+        let gameId;
 
-        for (const source of sources) {
-            for (const [type, sourceId] of Object.entries(source)) {
-                if (type === 'lastUpdate') continue;
-                
-                await this.db.run(
-                    'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
-                    [gameId, type, sourceId, source.lastUpdate || null]
-                );
+        if (!game) {
+            const result = await this.db.run(
+                'INSERT INTO games (name, release_date) VALUES (?, ?)',
+                [name, releaseDate]
+            );
+            gameId = result.lastID;
+
+            for (const source of sources) {
+                for (const [type, sourceId] of Object.entries(source)) {
+                    if (type === 'lastUpdate') continue;
+                    
+                    await this.db.run(
+                        'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
+                        [gameId, type, sourceId, source.lastUpdate || null]
+                    );
+                }
             }
+        } else {
+            gameId = game.id;
         }
+
+        // Link game to guild
+        await this.db.run(
+            'INSERT OR IGNORE INTO guild_games (guild_id, game_id) VALUES (?, ?)',
+            [guildId, gameId]
+        );
 
         return gameId;
     }
@@ -123,17 +144,37 @@ class DatabaseManager {
         return true;
     }
 
-    async removeGame(name) {
+    async removeGame(guildId, name) {
         const game = await this.db.get('SELECT id FROM games WHERE name = ?', [name]);
         if (!game) return false;
 
-        await this.db.run('DELETE FROM game_sources WHERE game_id = ?', [game.id]);
-        await this.db.run('DELETE FROM games WHERE id = ?', [game.id]);
+        // Remove game from guild
+        await this.db.run(
+            'DELETE FROM guild_games WHERE guild_id = ? AND game_id = ?',
+            [guildId, game.id]
+        );
+
+        // Check if game is still used by other guilds
+        const usedByOtherGuilds = await this.db.get(
+            'SELECT 1 FROM guild_games WHERE game_id = ?',
+            [game.id]
+        );
+
+        // If not used by other guilds, remove game completely
+        if (!usedByOtherGuilds) {
+            await this.db.run('DELETE FROM game_sources WHERE game_id = ?', [game.id]);
+            await this.db.run('DELETE FROM games WHERE id = ?', [game.id]);
+        }
+
         return true;
     }
 
-    async getGames() {
-        const games = await this.db.all('SELECT * FROM games');
+    async getGames(guildId) {
+        const games = await this.db.all(`
+            SELECT g.* FROM games g
+            JOIN guild_games gg ON g.id = gg.game_id
+            WHERE gg.guild_id = ?
+        `, [guildId]);
         const result = [];
 
         for (const game of games) {
@@ -155,8 +196,13 @@ class DatabaseManager {
         return result;
     }
 
-    async getGame(name) {
-        const game = await this.db.get('SELECT * FROM games WHERE name = ?', [name]);
+    async getGame(guildId, name) {
+        const game = await this.db.get(`
+            SELECT g.* FROM games g
+            JOIN guild_games gg ON g.id = gg.game_id
+            WHERE gg.guild_id = ? AND g.name = ?
+        `, [guildId, name]);
+        
         if (!game) return null;
 
         const sources = await this.db.all(

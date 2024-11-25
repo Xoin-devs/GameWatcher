@@ -5,6 +5,7 @@ const Utils = require('../../utils');
 const DatabaseManager = require('../../database');
 const logger = require('../../logger');
 const ReleaseManager = require('../../releaseManager');
+const CommandHelper = require('../../commandHelper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,12 +29,14 @@ module.exports = {
                 .setDescription('Release date of the game (DD/MM/YYYY)')
                 .setRequired(false)),
     async execute(interaction) {
+        if (!await CommandHelper.checkAdminPermissions(interaction)) return;
+
         const db = await DatabaseManager.getInstance();
         const gameName = interaction.options.getString(CommandsOption.NAME);
 
-        const existingGame = await db.getGame(gameName);
+        const existingGame = await db.getGame(interaction.guildId, gameName);
         if (existingGame) {
-            await interaction.reply('This game is already registered');
+            await interaction.reply({ content: 'This game is already registered', ephemeral: true });
             return;
         }
 
@@ -41,24 +44,19 @@ module.exports = {
             const gameDetails = Utils.getGameDetailsFromInteraction(interaction);
             const gameObject = Utils.buildGameObject(gameName, gameDetails);
 
-            logger.debug(`Adding game with details:`, {
-                name: gameName,
-                sources: gameObject.sources,
-                releaseDate: gameObject.releaseDate
-            });
-
             await db.addGame(
+                interaction.guildId,
                 gameName,
                 gameObject.sources,
                 gameObject.releaseDate
             );
             
             const message = `Game ${gameName} added successfully!`;
-            logger.info(message);
-            await interaction.reply(message);
+            logger.info(`Guild ${interaction.guildId}: ${message}`);
+            await interaction.reply({ content: message, ephemeral: true });
             
-            const newGame = await db.getGame(gameName);
-            ReleaseManager.getInstance().addOrUpdateCronJob(newGame);
+            const newGame = await db.getGame(interaction.guildId, gameName);
+            ReleaseManager.getInstance().addOrUpdateCronJob(newGame, interaction.guildId);
         } catch (error) {
             const message = `Failed to register game ${gameName}: ${error.message}`;
             logger.error(message, error);
