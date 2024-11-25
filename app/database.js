@@ -28,6 +28,13 @@ class DatabaseManager {
 
     async createTables() {
         await this.db.exec(`
+            CREATE TABLE IF NOT EXISTS sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                access_token TEXT NOT NULL,
+                expires_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS guilds (
                 id TEXT PRIMARY KEY,
                 channel_id TEXT NOT NULL
@@ -44,15 +51,15 @@ class DatabaseManager {
                 type TEXT NOT NULL,
                 source_id TEXT NOT NULL,
                 last_update TEXT,
-                FOREIGN KEY (game_id) REFERENCES games(id),
+                FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
                 PRIMARY KEY (game_id, type)
             );
 
             CREATE TABLE IF NOT EXISTS guild_games (
                 guild_id TEXT,
                 game_id INTEGER,
-                FOREIGN KEY (guild_id) REFERENCES guilds(id),
-                FOREIGN KEY (game_id) REFERENCES games(id),
+                FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE,
+                FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
                 PRIMARY KEY (guild_id, game_id)
             );
         `);
@@ -218,6 +225,22 @@ class DatabaseManager {
             })),
             ...(game.release_date && { releaseDate: game.release_date })
         };
+    }
+
+    // Add session management methods
+    async saveSession(sessionId, userId, accessToken, expiresAt) {
+        await this.db.run(
+            'INSERT OR REPLACE INTO sessions (session_id, user_id, access_token, expires_at) VALUES (?, ?, ?, ?)',
+            [sessionId, userId, accessToken, expiresAt]
+        );
+    }
+
+    async getSession(sessionId) {
+        return await this.db.get('SELECT * FROM sessions WHERE session_id = ?', [sessionId]);
+    }
+
+    async deleteSession(sessionId) {
+        await this.db.run('DELETE FROM sessions WHERE session_id = ?', [sessionId]);
     }
 
     async close() {
