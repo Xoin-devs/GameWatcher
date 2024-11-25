@@ -1,4 +1,3 @@
-const { readConfig, writeConfig } = require('../../config');
 const { SlashCommandBuilder } = require("discord.js");
 const CommandHelper = require('../../commandHelper');
 const CommandsName = require("../../constants/commandsName");
@@ -6,6 +5,7 @@ const CommandsOption = require("../../constants/commandsOption");
 const Utils = require('../../utils');
 const logger = require('../../logger');
 const ReleaseManager = require('../../releaseManager');
+const DatabaseManager = require('../../database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -33,30 +33,31 @@ module.exports = {
         CommandHelper.autoCompleteGameName(interaction);
     },
     async execute(interaction) {
-        const config = readConfig();
+        const db = await DatabaseManager.getInstance();
         const gameName = interaction.options.getString(CommandsOption.NAME);
 
-        if (!Utils.isGameRegistered(config, gameName)) {
+        const existingGame = await db.getGame(gameName);
+        if (!existingGame) {
             await interaction.reply('This game is not registered');
             return;
         }
 
-        const existingGame = config.games.find(game => game.name === gameName);
         const gameDetails = Utils.getGameDetailsFromInteraction(interaction);
-        const updatedGame = Utils.buildGameObject(gameName, gameDetails, existingGame);
+        const success = await db.updateGame(
+            gameName,
+            gameDetails.sources,
+            gameDetails.releaseDate
+        );
 
-        const gameIndex = config.games.findIndex(game => game.name === gameName);
-        config.games[gameIndex] = updatedGame;
-
-        try {
-            writeConfig(config);
+        if (success) {
             const message = `Game ${gameName} updated successfully!`;
             logger.info(message);
             await interaction.reply(message);
+            const updatedGame = await db.getGame(gameName);
             ReleaseManager.getInstance().addOrUpdateCronJob(updatedGame);
-        } catch (error) {
+        } else {
             const message = `Failed to update game ${gameName}`;
-            logger.error(message, error);
+            logger.error(message);
             await interaction.reply(message);
         }
     }

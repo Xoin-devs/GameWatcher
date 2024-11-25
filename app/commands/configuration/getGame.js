@@ -1,10 +1,10 @@
-const { readConfig, writeConfig } = require('../../config');
 const { SlashCommandBuilder } = require('discord.js');
 const CommandHelper = require('../../commandHelper');
 const CommandsName = require('../../constants/commandsName');
 const CommandsOption = require('../../constants/commandsOption');
 const Utils = require('../../utils');
 const logger = require('../../logger');
+const DatabaseManager = require('../../database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,17 +20,16 @@ module.exports = {
         CommandHelper.autoCompleteGameName(interaction);
     },
     async execute(interaction) {
-        const config = readConfig();
         const gameName = interaction.options.getString(CommandsOption.NAME);
+        const db = await DatabaseManager.getInstance();
+        const game = await db.getGame(gameName);
 
-        if (!Utils.isGameRegistered(config, gameName)) {
+        if (!game) {
             await interaction.reply('This game is not registered');
             return;
         }
 
-        const game = Utils.getGameByName(config, gameName);
         const gameInfos = Utils.getGameInfos(game);
-
         const gameInfosFormatted = `\`\`\`${gameInfos}\`\`\``;
 
         logger.info(`Getting information about game: ${gameName} | ${gameInfos}`);

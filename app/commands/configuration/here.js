@@ -1,7 +1,7 @@
-const { readConfig, writeConfig } = require('../../config');
 const { SlashCommandBuilder } = require('discord.js');
 const CommandsName = require('../../constants/commandsName');
 const logger = require('../../logger');
+const DatabaseManager = require('../../database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,17 +11,10 @@ module.exports = {
     async execute(interaction) {
         const channelId = interaction.channel.id;
         const guildId = interaction.guild.id;
-        let config = readConfig();
 
-        let guildConfig = config.guilds.find(g => g.guildId === guildId);
+        const db = await DatabaseManager.getInstance();
+        await db.addGuild(guildId, channelId);
 
-        if (guildConfig) {
-            guildConfig.channelId = channelId;
-        } else {
-            config.guilds.push({ guildId, channelId });
-        }
-
-        writeConfig(config);
         logger.info(`Channel ${channelId} is now the news channel for guild ${guildId}`);
         await interaction.reply('I will spread news in this channel');
     }

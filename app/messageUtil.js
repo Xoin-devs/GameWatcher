@@ -1,9 +1,9 @@
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const { readConfig, writeConfig } = require('./config');
 const client = require('./client');
 const { convert } = require('html-to-text');
 const PrettyColors = require('./constants/prettyColors');
 const DiscordConstants = require('./constants/discordConstants');
+const DatabaseManager = require('./database');
 
 class MessageUtil {
     static getRandomColor() {
@@ -31,9 +31,10 @@ class MessageUtil {
     }
 
     async sendTweetToAllChannels(tweet) {
-        const config = readConfig();
-        for (let guild of config.guilds) {
-            await this.sendTweetMessage(tweet, guild.channelId);
+        const db = await DatabaseManager.getInstance();
+        const guilds = await db.getGuilds();
+        for (let guild of guilds) {
+            await this.sendTweetMessage(tweet, guild.channel_id);
         }
     }
 
@@ -58,9 +59,10 @@ class MessageUtil {
     }
 
     async sendSteamNewsToAllChannels(newsItem) {
-        const config = readConfig();
-        for (let guild of config.guilds) {
-            await this.sendSteamNewsMessage(newsItem, guild.channelId);
+        const db = await DatabaseManager.getInstance();
+        const guilds = await db.getGuilds();
+        for (let guild of guilds) {
+            await this.sendSteamNewsMessage(newsItem, guild.channel_id);
         }
     }
 
@@ -93,9 +95,10 @@ class MessageUtil {
     }
 
     static async sendGameReleaseToAllChannels(game) {
-        const config = readConfig();
-        for (let guild of config.guilds) {
-            await this.sendGameReleaseMessage(game, guild.channelId);
+        const db = await DatabaseManager.getInstance();
+        const guilds = await db.getGuilds();
+        for (let guild of guilds) {
+            await this.sendGameReleaseMessage(game, guild.channel_id);
         }
     }
 

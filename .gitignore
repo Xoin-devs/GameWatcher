@@ -6,3 +6,4 @@
 config.dev.json
 config.prod.json
 publish.bat
+/data.dev.sqlite

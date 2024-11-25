@@ -1,7 +1,7 @@
-const { readConfig } = require('./config');
 const cron = require('node-cron');
 const logger = require('./logger');
 const MessageUtil = require('./messageUtil');
+const DatabaseManager = require('./database');
 
 class ReleaseManager {
     constructor() {
@@ -21,10 +21,15 @@ class ReleaseManager {
         return ReleaseManager.instance;
     }
 
-    startCronJobs() {
-        const config = readConfig();
-        config.games.forEach(game => {
-            this.addOrUpdateCronJob(game);
+    async startCronJobs() {
+        const db = await DatabaseManager.getInstance();
+        const games = await db.getGames();
+        games.forEach(game => {
+            try {
+                this.addOrUpdateCronJob(game);
+            } catch (error) {
+                logger.error(`Failed to create cron job for ${game.name}: ${error.message}`);
+            }
         });
     }
 
@@ -33,9 +38,17 @@ class ReleaseManager {
             this.removeCronJob(game.name);
         }
 
-        if (game.releaseDate) {
+        if (!game.releaseDate) {
+            logger.debug(`Skipping cron job for ${game.name} - no release date set`);
+            return;
+        }
+
+        try {
             this.cronJobs[game.name] = this.createCronJobFromGame(game);
             logger.info(`Added cron job for ${game.name} for date ${game.releaseDate}`);
+        } catch (error) {
+            logger.error(`Error creating cron job for ${game.name}: ${error.message}`);
+            throw error;
         }
     }
 
@@ -47,33 +60,33 @@ class ReleaseManager {
     }
 
     createCronJobFromGame(game) {
-        const releaseDateYear = new Date(game.releaseDate).getFullYear();
-        const cronTime = this.getCronTimebyDate(new Date(game.releaseDate));
+        if (!game.releaseDate) {
+            throw new Error('Game has no valid release date');
+        }
+
+        const [year, month, day] = game.releaseDate.split('-');
+        const releaseDate = new Date(year, month - 1, day);
+
+        if (isNaN(releaseDate.getTime())) {
+            throw new Error(`Invalid release date format: ${game.releaseDate}`);
+        }
+
+        const releaseDateYear = parseInt(year);
+        const cronTime = `0 0 ${day} ${month} *`;
+
+        if (!cron.validate(cronTime)) {
+            logger.error('Invalid cron expression', cronTime);
+            throw new Error('Invalid cron expression');
+        }
+
         return cron.schedule(cronTime, () => {
             const currentYear = new Date().getFullYear();
             if (releaseDateYear === currentYear) {
                 this.sendMessage(game.name);
             } else {
-                logger.warn(`Skipping message for ${game.name} as the release year ${releaseDate.getFullYear()} is not the current year ${currentYear}`);
+                logger.warn(`Skipping message for ${game.name} as the release year ${releaseDateYear} is not the current year ${currentYear}`);
             }
         });
-    }
-
-    getCronTimebyDate(date) {
-        if (isNaN(date.getTime())) {
-            logger.error('Invalid date', date);
-            throw new Error('Invalid date' + date);
-        }
-
-        const cronExpression = `0 0 ${date.getUTCDate()} ${date.getUTCMonth() + 1} *`;
-
-        if (!cron.validate(cronExpression)) {
-            logger.error('Invalid cron expression', cronExpression);
-            throw new Error('Invalid cron expression');
-        }
-
-        logger.debug(`Cron time: ${cronExpression}`);
-        return cronExpression;
     }
 
     sendMessage(gameName) {

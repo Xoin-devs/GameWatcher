@@ -8,7 +8,9 @@
     "start:dev:profiling": "cross-env NODE_ENV=dev node --inspect-brk .",
     "start:prod": "cross-env NODE_ENV=prod node .",
     "deployCommands:dev": "cross-env NODE_ENV=dev node app/commandDeployer.js",
-    "deployCommands:prod": "cross-env NODE_ENV=prod node app/commandDeployer.js"
+    "deployCommands:prod": "cross-env NODE_ENV=prod node app/commandDeployer.js",
+    "migrate:dev": "cross-env NODE_ENV=dev node scripts/migration.js",
+    "migrate:prod": "cross-env NODE_ENV=prod node scripts/migration.js"
   },
   "author": "",
   "license": "ISC",
@@ -23,6 +25,8 @@
     "node-cron": "^3.0.3",
     "node-persist": "^4.0.1",
     "puppeteer": "^22.13.1",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {

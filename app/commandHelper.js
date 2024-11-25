@@ -1,22 +1,20 @@
-const { readConfig } = require('./config');
-const CommandsOption = require('./constants/commandsOption');
-const Utils = require('./utils');
-const logger = require('./logger');
+const DatabaseManager = require('./database');
 
-async function autoCompleteGameName(interaction) {
-    const config = readConfig();
-    const inputGameName = interaction.options.getString(CommandsOption.NAME);
-    const suggestions = Utils.getGameSuggestionsByName(config, inputGameName);
+class CommandHelper {
+    static async autoCompleteGameName(interaction) {
+        const db = await DatabaseManager.getInstance();
+        const focusedValue = interaction.options.getFocused();
+        const games = await db.getGames();
+        
+        const filtered = games
+            .map(game => game.name)
+            .filter(name => name.toLowerCase().includes(focusedValue.toLowerCase()))
+            .slice(0, 25);
 
-    logger.debug(`Found ${suggestions.length} suggestions for ${inputGameName}`);
-    await interaction.respond(
-        suggestions.map(game => {
-            const truncatedName = game.name.length > 25 ? game.name.substring(0, 25) : game.name;
-            return { name: truncatedName, value: truncatedName };
-        }),
-    );
+        await interaction.respond(
+            filtered.map(name => ({ name: name, value: name }))
+        );
+    }
 }
 
-module.exports = {
-    autoCompleteGameName
-}
+module.exports = CommandHelper;

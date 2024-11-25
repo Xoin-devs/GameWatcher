@@ -6,8 +6,23 @@ function normalizeName(name) {
 }
 
 function parseDate(dateInput) {
+    if (!dateInput) return null;
     const [day, month, year] = dateInput.split('/');
-    return new Date(`${month}/${day}/${year}`);
+    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    // Validate the date is correct
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) {
+        throw new Error(`Invalid date format: ${dateInput}`);
+    }
+    
+    return isoDate;
+}
+
+function formatDate(isoDate) {
+    if (!isoDate) return null;
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
 }
 
 function isGameRegistered(config, gameName) {
@@ -38,9 +53,7 @@ function getGameInfos(game) {
         });
     }
     if (game.releaseDate) {
-        const date = new Date(game.releaseDate);
-        const formattedDate = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-        gameInfo.push(`release_date: ${formattedDate}`);
+        gameInfo.push(`release_date: ${formatDate(game.releaseDate)}`);
     }
     return gameInfo.join(' ');
 }
@@ -73,21 +86,40 @@ function getGameDetailsFromInteraction(interaction) {
 function buildGameObject(gameName, newDetails, existingGame = {}) {
     const newGame = {
         name: gameName,
-        sources: existingGame.sources || [],
-        releaseDate: existingGame.releaseDate,
+        sources: [],
+        releaseDate: existingGame.releaseDate
     };
 
+    // Preserve existing sources that aren't being updated
+    if (existingGame.sources) {
+        newGame.sources = existingGame.sources.filter(source => {
+            const hasTwitter = source[SourceType.TWITTER];
+            const hasSteam = source[SourceType.STEAM_INTERNAL] || source[SourceType.STEAM_EXTERNAL];
+            return (!newDetails.twitterSource && hasTwitter) || (!newDetails.steamSource && hasSteam);
+        });
+    }
+
+    // Add new Twitter source
     if (newDetails.twitterSource) {
-        newGame.sources = newGame.sources.filter(source => !source[SourceType.TWITTER]);
-        newGame.sources.push({ [SourceType.TWITTER]: newDetails.twitterSource });
+        newGame.sources.push({
+            [SourceType.TWITTER]: newDetails.twitterSource,
+            lastUpdate: null
+        });
     }
 
+    // Add new Steam sources
     if (newDetails.steamSource) {
-        newGame.sources = newGame.sources.filter(source => !source[SourceType.STEAM_INTERNAL] && !source[SourceType.STEAM_EXTERNAL]);
-        newGame.sources.push({ [SourceType.STEAM_INTERNAL]: newDetails.steamSource });
-        newGame.sources.push({ [SourceType.STEAM_EXTERNAL]: newDetails.steamSource });
+        newGame.sources.push({
+            [SourceType.STEAM_INTERNAL]: newDetails.steamSource,
+            lastUpdate: null
+        });
+        newGame.sources.push({
+            [SourceType.STEAM_EXTERNAL]: newDetails.steamSource,
+            lastUpdate: null
+        });
     }
 
+    // Update release date if provided
     if (newDetails.releaseDate) {
         newGame.releaseDate = parseDate(newDetails.releaseDate);
     }
@@ -98,6 +130,7 @@ function buildGameObject(gameName, newDetails, existingGame = {}) {
 module.exports = {
     normalizeName,
     parseDate,
+    formatDate,
     isGameRegistered,
     getGameSuggestionsByName,
     getGameByName,

@@ -1,9 +1,8 @@
-const { readConfig, writeConfig } = require('../../config');
 const { SlashCommandBuilder } = require('discord.js');
 const CommandHelper = require('../../commandHelper');
 const CommandsName = require('../../constants/commandsName');
 const CommandsOption = require('../../constants/commandsOption');
-const Utils = require('../../utils');
+const DatabaseManager = require('../../database');
 const logger = require('../../logger');
 const ReleaseManager = require('../../releaseManager');
 
@@ -21,18 +20,17 @@ module.exports = {
         CommandHelper.autoCompleteGameName(interaction);
     },
     async execute(interaction) {
-        const config = readConfig();
+        const db = await DatabaseManager.getInstance();
         const gameName = interaction.options.getString(CommandsOption.NAME);
 
-        if (!Utils.isGameRegistered(config, gameName)) {
+        const existingGame = await db.getGame(gameName);
+        if (!existingGame) {
             await interaction.reply('This game is not registered');
             return;
         }
 
-        config.games = config.games.filter(game => Utils.normalizeName(game.name) !== Utils.normalizeName(gameName));
-
         try {
-            writeConfig(config);
+            await db.removeGame(gameName);
             ReleaseManager.getInstance().removeCronJob(gameName);
             const message = `Removed game: ${gameName}`;
             logger.info(message);
@@ -41,7 +39,6 @@ module.exports = {
             const message = `Failed to remove game: ${gameName}`;
             logger.error(message, error);
             await interaction.reply(message);
-            return;
         }
     },
 };

@@ -1,4 +1,4 @@
-const { readConfig, writeConfig } = require('../config');
+const DatabaseManager = require('../database');
 const MessageUtil = require('../messageUtil');
 const Utils = require('../utils');
 const logger = require('../logger');
@@ -32,6 +32,8 @@ class Watcher {
     }
 
     async checkNewsForSources(sources, gameName) {
+        const db = await DatabaseManager.getInstance();
+        
         for (const src of sources) {
             try {
                 const latestNews = await this.fetchNews(src);
@@ -50,6 +52,7 @@ class Watcher {
 
                     try {
                         await this.sendNews(latest);
+                        await db.updateGame(gameName, sources);
                     } catch (error) {
                         logger.error(`Error sending news for game ${gameName}`, error);
                     }
@@ -62,27 +65,24 @@ class Watcher {
     }
 
     async checkNews() {
-        const config = readConfig();
+        const db = await DatabaseManager.getInstance();
+        const games = await db.getGames();
 
-        for (let game of config.games) {
+        for (let game of games) {
             await this.checkNewsForSources(game.sources, game.name);
         }
-
-        writeConfig(config);
     }
 
     async checkNewsForGame(gameName) {
-        const config = readConfig();
-
-        const game = config.games.find(g => Utils.normalizeName(g.name) === Utils.normalizeName(gameName));
+        const db = await DatabaseManager.getInstance();
+        const game = await db.getGame(gameName);
+        
         if (!game) {
             logger.error(`Game ${gameName} not found.`);
             return;
         }
 
         await this.checkNewsForSources(game.sources, game.name);
-
-        writeConfig(config);
     }
 
     async fetchNews(source) {
