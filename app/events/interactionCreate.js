@@ -1,19 +1,5 @@
 const { Events, Collection } = require('discord.js');
-const CustomIds = require('../constants/customIds');
 const logger = require('../logger');
-
-// #region UNUSED - FOR EXAMPLE ONLY
-const addGameButtonHandler = require('../handlers/addGame');
-const removeGameButtonHandler = require('../handlers/removeGame');
-const gameSelectMenuHandler = require('../handlers/gameSelect');
-
-const customIdHandlers = {
-    [CustomIds.ADD_GAME_BUTTON]: addGameButtonHandler,
-    [CustomIds.REMOVE_GAME_BUTTON]: removeGameButtonHandler,
-    [CustomIds.GAME_SELECT_MENU]: gameSelectMenuHandler,
-    // add other handlers here
-};
-// #endregion
 
 // #region SlashCommand Handling
 async function handleSlashCommand(interaction) {
@@ -71,12 +57,7 @@ async function handleCommandError(interaction) {
 
 // #region Button and Menu Handling
 async function handleButtonOrMenu(interaction) {
-    const handler = customIdHandlers[interaction.customId];
-    if (handler) {
-        await handler(interaction);
-    } else {
-        logger.error(`No handler for customId ${interaction.customId}`);
-    }
+    // TODO Implement button and menu handling if needed
 }
 // #endregion
 
