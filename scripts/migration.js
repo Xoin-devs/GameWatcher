@@ -23,34 +23,23 @@ async function migrateData() {
         const db = await DatabaseManager.getInstance();
         const config = readConfig();
 
-        // Migrate guilds
         logger.info('Migrating guilds...');
         for (const guild of config.guilds) {
             await db.addGuild(guild.guildId, guild.channelId);
         }
 
-        // Migrate games
         logger.info('Migrating games...');
         for (const game of config.games) {
             const releaseDate = convertDateToISO(game.releaseDate);
             logger.debug(`Converting date for ${game.name}: ${game.releaseDate} -> ${releaseDate}`);
-            
             try {
-                await db.addGame(
-                    game.name,
-                    game.sources,
-                    releaseDate
-                );
+                await db.addGame(game.name, game.sources, releaseDate);
             } catch (error) {
-                if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('UNIQUE constraint failed: games.name')) {
+                if (error.code === 'ER_DUP_ENTRY') {
                     logger.warn(`Game ${game.name} already exists. Updating existing record.`);
-                    await db.updateGame(
-                        game.name,
-                        game.sources,
-                        releaseDate
-                    );
+                    await db.updateGame(game.name, game.sources, releaseDate);
                 } else {
-                    logger.error(`Failed to migrate game ${game.name}:`, error);
+                    logger.error(`Failed to migrate game ${game.name}:`, error.message || error);
                 }
             }
         }

@@ -1,5 +1,4 @@
-const sqlite3 = require('sqlite3');
-const { open } = require('sqlite');
+const mariadb = require('mariadb');
 const path = require('path');
 const logger = require('./logger');
 
@@ -15,133 +14,131 @@ class DatabaseManager {
     }
 
     async init() {
-        const dbPath = process.env.DB_PATH || 'data.sqlite';
-        
-        this.db = await open({
-            filename: path.join(__dirname, '..', dbPath),
-            driver: sqlite3.Database
+        this.pool = mariadb.createPool({
+            host: process.env.DB_HOST || 'localhost',
+            port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || '',
+            database: process.env.DB_NAME || 'mydatabase',
+            waitForConnections: true,
+            connectTimeout: 30000
         });
 
-        logger.info(`Connected to database: ${dbPath}`);
+        logger.info('Connected to MariaDB');
         await this.createTables();
     }
 
     async createTables() {
-        await this.db.exec(`
+        await this.pool.query(`
             CREATE TABLE IF NOT EXISTS guilds (
-                id TEXT PRIMARY KEY,
-                channel_id TEXT NOT NULL
+                id VARCHAR(255) PRIMARY KEY,
+                channel_id VARCHAR(255) NOT NULL
             );
-
+        `);
+        await this.pool.query(`
             CREATE TABLE IF NOT EXISTS games (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                release_date TEXT
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                release_date DATE NULL
             );
-
+        `);
+        await this.pool.query(`
             CREATE TABLE IF NOT EXISTS game_sources (
-                game_id INTEGER,
-                type TEXT NOT NULL,
-                source_id TEXT NOT NULL,
-                last_update TEXT,
+                game_id INT,
+                type VARCHAR(50) NOT NULL,
+                source_id VARCHAR(255) NOT NULL,
+                last_update VARCHAR(50),
                 FOREIGN KEY (game_id) REFERENCES games(id),
                 PRIMARY KEY (game_id, type)
             );
         `);
     }
 
-    // Guild operations
     async addGuild(guildId, channelId) {
-        await this.db.run('INSERT OR REPLACE INTO guilds (id, channel_id) VALUES (?, ?)', [guildId, channelId]);
+        await this.pool.query(
+            'INSERT INTO guilds (id, channel_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id)',
+            [guildId, channelId]
+        );
     }
 
     async removeGuild(guildId) {
-        await this.db.run('DELETE FROM guilds WHERE id = ?', [guildId]);
+        await this.pool.query('DELETE FROM guilds WHERE id = ?', [guildId]);
     }
 
     async getGuilds() {
-        return await this.db.all('SELECT * FROM guilds');
+        return await this.pool.query('SELECT * FROM guilds');
     }
 
-    // Game operations
     async addGame(name, sources = [], releaseDate = null) {
-        // Validate date format if provided
         if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);
         }
-
-        const result = await this.db.run(
+        const dateVal = releaseDate || null;
+        const res = await this.pool.query(
             'INSERT INTO games (name, release_date) VALUES (?, ?)',
-            [name, releaseDate]
+            [name, dateVal]
         );
-        const gameId = result.lastID;
-
+        const gameId = res.insertId;
+        
         for (const source of sources) {
             for (const [type, sourceId] of Object.entries(source)) {
                 if (type === 'lastUpdate') continue;
-                
-                await this.db.run(
+                await this.pool.query(
                     'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
                     [gameId, type, sourceId, source.lastUpdate || null]
                 );
             }
         }
-
         return gameId;
     }
 
     async updateGame(name, sources = [], releaseDate = null) {
-        // Validate date format if provided
+        logger.debug('updateGame called with:', { name, sources, releaseDate });
         if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);
         }
-
-        const game = await this.db.get('SELECT id FROM games WHERE name = ?', [name]);
-        if (!game) return false;
-
-        await this.db.run(
+        const [rows] = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        if (!rows.length) return false;
+        const gameId = rows[0].id;
+        
+        logger.debug('Updating game:', { gameId });
+        await this.pool.query(
             'UPDATE games SET release_date = ? WHERE id = ?',
-            [releaseDate, game.id]
+            [releaseDate || null, gameId]
         );
-
-        // Remove existing sources for this game
-        await this.db.run('DELETE FROM game_sources WHERE game_id = ?', [game.id]);
-
-        // Add new sources
+        await this.pool.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
+        
         for (const source of sources) {
-            // Skip the lastUpdate key from the source object
             for (const [type, sourceId] of Object.entries(source)) {
                 if (type === 'lastUpdate') continue;
-                
-                await this.db.run(
+                await this.pool.query(
                     'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
-                    [game.id, type, sourceId, source.lastUpdate || null]
+                    [gameId, type, sourceId, source.lastUpdate || null]
                 );
             }
         }
-
+        logger.debug('New sources:', sources);
         return true;
     }
 
     async removeGame(name) {
-        const game = await this.db.get('SELECT id FROM games WHERE name = ?', [name]);
-        if (!game) return false;
-
-        await this.db.run('DELETE FROM game_sources WHERE game_id = ?', [game.id]);
-        await this.db.run('DELETE FROM games WHERE id = ?', [game.id]);
+        const [rows] = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        if (!rows.length) return false;
+        const gameId = rows[0].id;
+        
+        await this.pool.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
+        await this.pool.query('DELETE FROM games WHERE id = ?', [gameId]);
         return true;
     }
 
     async getGames() {
-        const games = await this.db.all('SELECT * FROM games');
+        const games = await this.pool.query('SELECT * FROM games');
         const result = [];
-
         for (const game of games) {
-            const sources = await this.db.all(
+            const sources = await this.pool.query(
                 'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
                 [game.id]
             );
-
             result.push({
                 name: game.name,
                 sources: sources.map(s => ({
@@ -151,19 +148,17 @@ class DatabaseManager {
                 ...(game.release_date && { releaseDate: game.release_date })
             });
         }
-
         return result;
     }
 
     async getGame(name) {
-        const game = await this.db.get('SELECT * FROM games WHERE name = ?', [name]);
-        if (!game) return null;
-
-        const sources = await this.db.all(
+        const [rows] = await this.pool.query('SELECT * FROM games WHERE name = ?', [name]);
+        if (!rows.length) return null;
+        const game = rows[0];
+        const sources = await this.pool.query(
             'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
             [game.id]
         );
-
         return {
             name: game.name,
             sources: sources.map(s => ({
@@ -175,7 +170,7 @@ class DatabaseManager {
     }
 
     async close() {
-        await this.db.close();
+        await this.pool.end();
     }
 }
 
