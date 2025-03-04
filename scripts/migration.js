@@ -35,11 +35,24 @@ async function migrateData() {
             const releaseDate = convertDateToISO(game.releaseDate);
             logger.debug(`Converting date for ${game.name}: ${game.releaseDate} -> ${releaseDate}`);
             
-            await db.addGame(
-                game.name,
-                game.sources,
-                releaseDate
-            );
+            try {
+                await db.addGame(
+                    game.name,
+                    game.sources,
+                    releaseDate
+                );
+            } catch (error) {
+                if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('UNIQUE constraint failed: games.name')) {
+                    logger.warn(`Game ${game.name} already exists. Updating existing record.`);
+                    await db.updateGame(
+                        game.name,
+                        game.sources,
+                        releaseDate
+                    );
+                } else {
+                    logger.error(`Failed to migrate game ${game.name}:`, error);
+                }
+            }
         }
 
         logger.info('Migration completed successfully!');
