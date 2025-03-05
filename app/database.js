@@ -52,6 +52,15 @@ class DatabaseManager {
                 PRIMARY KEY (game_id, type)
             );
         `);
+        await this.pool.query(`
+            CREATE TABLE IF NOT EXISTS guild_games (
+                guild_id VARCHAR(255),
+                game_id INT,
+                FOREIGN KEY (guild_id) REFERENCES guilds(id),
+                FOREIGN KEY (game_id) REFERENCES games(id),
+                PRIMARY KEY (guild_id, game_id)
+            );
+        `);
     }
 
     async addGuild(guildId, channelId) {
@@ -167,6 +176,41 @@ class DatabaseManager {
             })),
             ...(game.release_date && { releaseDate: game.release_date })
         };
+    }
+
+    async linkGameToGuild(guildId, gameId) {
+        await this.pool.query(
+            'INSERT INTO guild_games (guild_id, game_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE guild_id = guild_id',
+            [guildId, gameId]
+        );
+    }
+
+    async unlinkGameFromGuild(guildId, gameId) {
+        await this.pool.query(
+            'DELETE FROM guild_games WHERE guild_id = ? AND game_id = ?',
+            [guildId, gameId]
+        );
+    }
+
+    async getGuildGames(guildId) {
+        const games = await this.pool.query(`
+            SELECT g.id, g.name, g.release_date
+            FROM games g
+            JOIN guild_games gg ON g.id = gg.game_id
+            WHERE gg.guild_id = ?
+        `, [guildId]);
+        return games;
+    }
+
+    async getGuildGame(guildId, gameName) {
+        const rows = await this.pool.query(`
+            SELECT g.id, g.name, g.release_date
+            FROM games g
+            JOIN guild_games gg ON g.id = gg.game_id
+            WHERE gg.guild_id = ? AND g.name = ?
+        `, [guildId, gameName]);
+        if (!rows.length) return null;
+        return rows[0];
     }
 
     async close() {
