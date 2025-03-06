@@ -37,10 +37,16 @@ Game Watcher is a Discord bot designed to monitor and announce game releases and
     - Create `.env.dev` and `.env.prod` files based on the provided templates.
     - Example `.env.dev`:
         ```
-        TOKEN=your_discord_bot_token
-        CLIENT_ID=your_client_id
         LOG_LEVEL=INFO
-        DB_PATH=data.dev.sqlite
+
+        DISCORD_TOKEN= 
+        DISCORD_CLIENT_ID=
+
+        DB_HOST=
+        DB_USER=
+        DB_PASSWORD=
+        DB_NAME=
+        DB_PORT=
         ```
 
 ## Usage
