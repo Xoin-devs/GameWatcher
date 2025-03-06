@@ -78,6 +78,16 @@ class DatabaseManager {
         return await this.pool.query('SELECT * FROM guilds');
     }
 
+    async getGuildsForGame(gameName) {
+        return await this.pool.query(`
+            SELECT guilds.id, guilds.channel_id
+            FROM guilds
+            JOIN guild_games gg ON guilds.id = gg.guild_id
+            JOIN games g ON gg.game_id = g.id
+            WHERE g.name = ?
+        `, [gameName]);
+    }
+
     async addGame(name, sources = [], releaseDate = null) {
         if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);

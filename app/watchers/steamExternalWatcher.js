@@ -1,3 +1,4 @@
+const { isDev, isProd } = require('../config.js');
 const timeConstants = require('../constants/timeConstants.js');
 const { SteamExternalWrapper } = require('../wrappers/steamExternalWrapper.js');
 const { Watcher } = require('./watcher.js');
@@ -5,7 +6,12 @@ const SourceType = require('../constants/sourceType');
 
 class SteamExternalWatcher extends Watcher {
     constructor() {
-        super(timeConstants.TWO_HOURS + timeConstants.THIRTY_MINUTES);
+        if (isDev()) {
+            super(timeConstants.TWO_HOURS);
+        } else if (isProd()) {
+            super(timeConstants.TWO_HOURS + timeConstants.THIRTY_MINUTES);
+        }
+        
         this.steamExternalWrapper = new SteamExternalWrapper();
     }
 
@@ -18,8 +24,8 @@ class SteamExternalWatcher extends Watcher {
         }
     }
 
-    async sendNews(news) {
-        await this.messageUtil.sendSteamNewsToAllChannels(news);
+    async sendNews(news, gameName) {
+        await this.messageUtil.sendSteamNewsToAllChannels(news, gameName);
     }
 }
 

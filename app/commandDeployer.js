@@ -3,7 +3,6 @@
 // Standalone script. Do not run this script while your bot is running, as it will not work.
 
 const { REST, Routes } = require('discord.js');
-const { token, clientId } = require('./config');
 const fs = require('node:fs');
 const path = require('node:path');
 const logger = require('./logger');
@@ -30,16 +29,16 @@ for (const folder of commandFolders) {
 }
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(token);
+const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 // and deploy your commands!
 (async () => {
 	try {
-		logger.info(`Started refreshing ${commands.length} application (/) commands on ${clientId}.`);
+		logger.info(`Started refreshing ${commands.length} application (/) commands on ${process.env.DISCORD_CLIENT_ID}.`);
 
 		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
-			Routes.applicationCommands(clientId),
+			Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
 			{ body: commands },
 		);
 

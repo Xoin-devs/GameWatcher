@@ -30,9 +30,9 @@ class MessageUtil {
         }
     }
 
-    async sendTweetToAllChannels(tweet) {
+    async sendTweetToAllChannels(tweet, gameName) {
         const db = await DatabaseManager.getInstance();
-        const guilds = await db.getGuilds();
+        const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
             await this.sendTweetMessage(tweet, guild.channel_id);
         }
@@ -58,9 +58,9 @@ class MessageUtil {
         }
     }
 
-    async sendSteamNewsToAllChannels(newsItem) {
+    async sendSteamNewsToAllChannels(newsItem, gameName) {
         const db = await DatabaseManager.getInstance();
-        const guilds = await db.getGuilds();
+        const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
             await this.sendSteamNewsMessage(newsItem, guild.channel_id);
         }
