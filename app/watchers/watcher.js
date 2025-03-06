@@ -53,12 +53,16 @@ class Watcher {
                         continue;
                     }
 
-                    logger.info(`Fresh news about ${gameName} has just been released`);
+                    logger.info(`Fresh news about ${gameName} has just been found`);
                     src.lastUpdate = latestDate;
 
                     try {
                         await this.sendNews(latest, gameName);
-                        await db.updateGame(gameName, sources);
+                        for (const [type, sourceId] of Object.entries(src)) {
+                            if (type !== 'lastUpdate') {
+                                await db.updateSourceLastUpdate(gameName, type, sourceId, latestDate);
+                            }
+                        }
                     } catch (error) {
                         logger.error(`Error sending news for game ${gameName}`, error);
                     }

@@ -24,6 +24,7 @@ class DatabaseManager {
             connectTimeout: 30000
         });
 
+        logger.debug(`Connecting to database: ${process.env.DB_NAME || 'mydatabase'}`);
         logger.info('Connected to MariaDB');
         await this.createTables();
     }
@@ -116,8 +117,8 @@ class DatabaseManager {
         if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);
         }
-        const [rows] = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
-        if (!rows.length) return false;
+        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        if (rows.length === 0) return false;
         const gameId = rows[0].id;
         
         logger.debug('Updating game:', { gameId });
@@ -140,9 +141,24 @@ class DatabaseManager {
         return true;
     }
 
+    async updateSourceLastUpdate(gameName, sourceType, sourceId, lastUpdate) {
+        logger.debug(`Updating last update date for game '${gameName}', type '${sourceType}', id '${sourceId}', setting lastUpdate to '${lastUpdate}'`);
+
+        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [gameName]);
+        if (rows.length === 0) return false;
+        const gameId = rows[0].id;
+    
+        await this.pool.query(
+            'UPDATE game_sources SET last_update = ? WHERE game_id = ? AND type = ? AND source_id = ?',
+            [lastUpdate, gameId, sourceType, sourceId]
+        );
+        logger.info(`Successfully updated lastUpdate for game '${gameName}' - sourceType '${sourceType}', sourceId '${sourceId}' to '${lastUpdate}'`);
+        return true;
+    }
+
     async removeGame(name) {
-        const [rows] = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
-        if (!rows.length) return false;
+        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        if (rows.length === 0) return false;
         const gameId = rows[0].id;
         
         await this.pool.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
@@ -171,8 +187,8 @@ class DatabaseManager {
     }
 
     async getGame(name) {
-        const [rows] = await this.pool.query('SELECT * FROM games WHERE name = ?', [name]);
-        if (!rows.length) return null;
+        const rows = await this.pool.query('SELECT * FROM games WHERE name = ?', [name]);
+        if (rows.length === 0) return null;
         const game = rows[0];
         const sources = await this.pool.query(
             'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
@@ -219,7 +235,7 @@ class DatabaseManager {
             JOIN guild_games gg ON g.id = gg.game_id
             WHERE gg.guild_id = ? AND g.name = ?
         `, [guildId, gameName]);
-        if (!rows.length) return null;
+        if (rows.length === 0) return null;
         return rows[0];
     }
 

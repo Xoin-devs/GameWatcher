@@ -4,6 +4,7 @@ const { convert } = require('html-to-text');
 const PrettyColors = require('./constants/prettyColors');
 const DiscordConstants = require('./constants/discordConstants');
 const DatabaseManager = require('./database');
+const logger = require('./logger');
 
 class MessageUtil {
     static getRandomColor() {
@@ -62,6 +63,7 @@ class MessageUtil {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
+            logger.debug(`Sending news about ${gameName} to guild ${guild.id}`);
             await this.sendSteamNewsMessage(newsItem, guild.channel_id);
         }
     }
