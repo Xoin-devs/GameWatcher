@@ -33,7 +33,17 @@ Game Watcher is a Discord bot designed to monitor and announce game releases and
     npm install
     ```
 
-3. **Configure Environment Variables**
+3. **Setup Bot**
+    - Create a new Discord application and bot from the [Discord Developer Portal](https://discord.com/developers/applications).
+    - Copy the bot token and client ID for the `.env.dev` and `.env.prod` files.
+    - In the Installation section
+        - In context, only allow Guild install
+        - Scopes should be `applications.commands` and `bot`
+        - Permissions should be `Administrator` in develompent
+        - Permissions should be `Attach Files`, `Send Messages`, `Embed Links`, `Send Messages in Threads`,`Use Slash Commands` in production
+    - Add the bot to your server
+
+4. **Configure Environment Variables**
     - Create `.env.dev` and `.env.prod` files based on the provided templates.
     - Example `.env.dev`:
         ```
