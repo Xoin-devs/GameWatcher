@@ -1,5 +1,6 @@
 require('module-alias/register');
 require('@shared/config');
+const cors = require('cors');
 const express = require('express');
 const gameRoutes = require('./routes/gameRoutes');
 const logger = require('@shared/logger');
