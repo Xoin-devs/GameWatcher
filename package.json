@@ -1,36 +1,22 @@
 {
-  "name": "game-watcher",
+  "name": "game-watcher-monorepo",
   "version": "1.0.0",
-  "description": "",
-  "main": "app/app.js",
+  "description": "Monorepo for Game Watcher",
+  "private": true,
+  "workspaces": [
+    "bot",
+    "api",
+    "dashboard"
+  ],
   "scripts": {
-    "start:dev": "cross-env NODE_ENV=dev node .",
-    "start:dev:profiling": "cross-env NODE_ENV=dev node --inspect-brk .",
-    "start:prod": "cross-env NODE_ENV=prod node .",
-    "deployCommands:dev": "cross-env NODE_ENV=dev node app/commandDeployer.js",
-    "deployCommands:prod": "cross-env NODE_ENV=prod node app/commandDeployer.js",
-    "migrate:dev": "cross-env NODE_ENV=dev node scripts/migration.js",
-    "migrate:prod": "cross-env NODE_ENV=prod node scripts/migration.js"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "axios": "^1.7.2",
-    "chalk": "^4.1.2",
-    "discord.js": "^14.15.2",
-    "dotenv": "^16.4.5",
-    "html-to-text": "^9.0.5",
-    "joi": "^17.13.1",
-    "js-bbcode-parser": "^5.1.0",
-    "mariadb": "^3.4.0",
-    "node-cron": "^3.0.3",
-    "node-persist": "^4.0.1",
-    "puppeteer": "^22.13.1",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7",
-    "xml2js": "^0.6.2"
-  },
-  "devDependencies": {
-    "cross-env": "^7.0.3"
+    "start:bot:dev": "npm --prefix bot run start:dev",
+    "start:bot:dev:profiling": "npm --prefix bot run start:dev:profiling",
+    "start:bot:prod": "npm --prefix bot run start:prod",
+    "start:api:dev": "npm --prefix api run start:dev",
+    "start:api:prod": "npm --prefix api run start:prod",
+    "start:dashboard:dev": "npm --prefix dashboard run start:dev",
+    "start:dashboard:prod": "npm --prefix dashboard run start:prod",
+    "deployCommands:dev": "npm --prefix bot run deployCommands:dev",
+    "deployCommands:prod": "npm --prefix bot run deployCommands:prod"
   }
 }
