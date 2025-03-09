@@ -3,7 +3,7 @@ const { WatcherManager } = require('../watchers/watcherManager');
 const { SteamExternalWatcher } = require('../watchers/steamExternalWatcher');
 const { SteamInternalWatcher } = require('../watchers/steamInternalWatcher');
 const { TwitterWatcher } = require('../watchers/twitterWatcher');
-const logger = require('../logger');
+const logger = require('../../../shared/logger');
 const ReleaseManager = require('../releaseManager');
 
 module.exports = {

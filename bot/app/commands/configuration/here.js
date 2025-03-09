@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const CommandsName = require('../../constants/commandsName');
-const logger = require('../../logger');
-const DatabaseManager = require('../../database');
+const logger = require('../../../../shared/logger');
+const DatabaseManager = require('../../../../shared/database');
 
 module.exports = {
     data: new SlashCommandBuilder()

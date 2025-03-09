@@ -1,4 +1,4 @@
-const { isDev, isProd } = require('../config.js');
+const { isDev, isProd } = require('../../../shared/config');
 const timeConstants = require('../constants/timeConstants.js');
 const { TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');

@@ -1,4 +1,4 @@
-const { isDev, isProd } = require('../config.js');
+const { isDev, isProd } = require('../../../shared/config.js');
 const timeConstants = require('../constants/timeConstants.js');
 const { SteamExternalWrapper } = require('../wrappers/steamExternalWrapper.js');
 const { Watcher } = require('./watcher.js');

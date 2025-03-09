@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 const client = require('./client');
-const logger = require('./logger');
+const logger = require('../../shared/logger');
 
 function initCommandsLocally() {
     client.commands = new Collection();

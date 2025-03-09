@@ -1,5 +1,5 @@
 const { Events, Collection } = require('discord.js');
-const logger = require('../logger');
+const logger = require('../../../shared/logger');
 
 // #region SlashCommand Handling
 async function handleSlashCommand(interaction) {

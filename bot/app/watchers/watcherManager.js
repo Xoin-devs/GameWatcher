@@ -1,4 +1,4 @@
-const logger = require('../logger');
+const logger = require('../../../shared/logger');
 
 cron = require('node-cron');
 

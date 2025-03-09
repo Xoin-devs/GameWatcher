@@ -3,9 +3,9 @@ const CommandHelper = require('../../commandHelper');
 const CommandsName = require("../../constants/commandsName");
 const CommandsOption = require("../../constants/commandsOption");
 const Utils = require('../../utils');
-const logger = require('../../logger');
+const logger = require('../../../../shared/logger');
 const ReleaseManager = require('../../releaseManager');
-const DatabaseManager = require('../../database');
+const DatabaseManager = require('../../../../shared/database');
 
 module.exports = {
     data: new SlashCommandBuilder()

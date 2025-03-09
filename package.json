@@ -18,5 +18,11 @@
     "start:dashboard:prod": "npm --prefix dashboard run start:prod",
     "deployCommands:dev": "npm --prefix bot run deployCommands:dev",
     "deployCommands:prod": "npm --prefix bot run deployCommands:prod"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "dotenv": "^16.4.7",
+    "mariadb": "^3.4.0",
+    "module-alias": "^2.2.3"
   }
 }

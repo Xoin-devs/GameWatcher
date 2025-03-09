@@ -5,8 +5,8 @@ const passport = require('passport');
 const { Strategy } = require('passport-discord');
 const path = require('path');
 const https = require('https');
-const DatabaseManager = require('./database');
-const logger = require('./logger');
+const DatabaseManager = require('../../shared/database');
+const logger = require('../../shared/logger');
 
 class WebServer {
     constructor() {

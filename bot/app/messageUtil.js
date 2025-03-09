@@ -3,8 +3,8 @@ const client = require('./client');
 const { convert } = require('html-to-text');
 const PrettyColors = require('./constants/prettyColors');
 const DiscordConstants = require('./constants/discordConstants');
-const DatabaseManager = require('./database');
-const logger = require('./logger');
+const DatabaseManager = require('../../shared/database');
+const logger = require('../../shared/logger');
 
 class MessageUtil {
     static getRandomColor() {

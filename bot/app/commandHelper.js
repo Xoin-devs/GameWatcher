@@ -1,4 +1,4 @@
-const DatabaseManager = require('./database');
+const DatabaseManager = require('../../shared/database');
 
 class CommandHelper {
     static async autoCompleteGameName(interaction) {

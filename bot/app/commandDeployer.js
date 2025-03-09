@@ -5,7 +5,7 @@
 const { REST, Routes } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const logger = require('./logger');
+const logger = require('../../shared/logger');
 
 const commands = [];
 // Grab all the command folders from the commands directory you created earlier

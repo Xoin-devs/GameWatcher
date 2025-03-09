@@ -1,7 +1,7 @@
-require('./config');
+require('../../shared/config');
 const client = require('./client');
 const { initCommandsLocally } = require('./commandHandler');
-const logger = require('./logger');
+const logger = require('../../shared/logger');
 
 logger.info('Starting the application...');
 initCommandsLocally();

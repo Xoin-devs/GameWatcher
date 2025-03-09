@@ -1,7 +1,7 @@
 const cron = require('node-cron');
-const logger = require('./logger');
+const logger = require('../../shared/logger');
 const MessageUtil = require('./messageUtil');
-const DatabaseManager = require('./database');
+const DatabaseManager = require('../../shared/database');
 
 class ReleaseManager {
     constructor() {

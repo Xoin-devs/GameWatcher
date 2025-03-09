@@ -1,5 +1,5 @@
-require('./config');
-const logger = require('./logger');
+require('../../shared/config');
+const logger = require('../../shared/logger');
 const WebServer = require('./webServer');
 
 async function startApp() {

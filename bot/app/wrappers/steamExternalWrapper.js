@@ -1,5 +1,5 @@
 const axios = require('axios');
-const logger = require('../logger');
+const logger = require('../../../shared/logger');
 const SteamFeedType = require('../constants/steamFeedType');
 
 class SteamExternalWrapper {
