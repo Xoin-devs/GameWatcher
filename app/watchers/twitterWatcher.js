@@ -1,3 +1,4 @@
+const { isDev, isProd } = require('../config.js');
 const timeConstants = require('../constants/timeConstants.js');
 const { TwitterWrapper } = require('../wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
@@ -5,7 +6,11 @@ const SourceType = require('../constants/sourceType');
 
 class TwitterWatcher extends Watcher {
     constructor() {
-        super(timeConstants.ONE_HOUR);
+        if (isDev()) {
+            super(timeConstants.TWO_HOURS);
+        } else if (isProd()) {
+            super(timeConstants.ONE_HOUR);
+        }
         this.twitterWrapper = new TwitterWrapper();
     }
 
@@ -20,8 +25,8 @@ class TwitterWatcher extends Watcher {
         }
     }
 
-    async sendNews(news) {
-        await this.messageUtil.sendTweetToAllChannels(news);
+    async sendNews(news, gameName) {
+        await this.messageUtil.sendTweetToAllChannels(news, gameName);
     }
 }
 

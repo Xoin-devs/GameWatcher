@@ -11,6 +11,14 @@ if (result.error) {
 
 const configPath = path.join(__dirname, '..', `config.${env}.json`);
 
+function isDev() {
+    return env === 'dev';
+}
+
+function isProd() {
+    return env === 'prod';
+}
+
 const configSchema = Joi.object({
     guilds: Joi.array().items(
         Joi.object({
@@ -59,26 +67,8 @@ function readConfig() {
     return config;
 }
 
-function writeConfig(config) {
-    const configToWrite = { ...config };
-
-    configToWrite.games.forEach(game => {
-        if (game.releaseDate) {
-            game.releaseDate = game.releaseDate.toISOString().split('T')[0];
-        }
-    });
-
-    const { error } = configSchema.validate(configToWrite);
-    if (error) {
-        throw new Error([`Invalid config: ${error.message}`]);
-    }
-    
-    fs.writeFileSync(configPath, JSON.stringify(configToWrite, null, 2));
-}
-
 module.exports = {
-    token: process.env.TOKEN,
-    clientId: process.env.CLIENT_ID,
-    readConfig,
-    writeConfig
+    readConfig, 
+    isDev, 
+    isProd
 };

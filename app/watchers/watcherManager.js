@@ -27,19 +27,6 @@ class WatcherManager {
         }
     }
 
-    async checkNewsForGame(gameName) {
-        for (const watcher of this.watchers) {
-            await watcher.checkNewsForGame(gameName);
-        }
-    }
-
-    // Mainly for debugging purposes
-    async checkNews() {
-        for (const watcher of this.watchers) {
-            await watcher.checkNews();
-        }
-    }
-
     static getInstance() {
         if (!WatcherManager.instance) {
             WatcherManager.instance = new WatcherManager();
