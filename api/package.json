@@ -1,0 +1,17 @@
+{
+    "name": "game-watcher-api",
+    "version": "1.0.0",
+    "description": "Backend Express API for Game Watcher",
+    "main": "src/server.js",
+    "scripts": {
+      "start:dev": "cross-env NODE_ENV=dev node src/server.js",
+      "start:prod": "cross-env NODE_ENV=prod node src/server.js"
+    },
+    "dependencies": {
+      "express": "^4.21.2",
+      "mariadb": "^3.4.0"
+    },
+    "devDependencies": {
+      "cross-env": "^7.0.3"
+    }
+  }

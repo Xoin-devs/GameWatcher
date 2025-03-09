@@ -1,10 +1,2 @@
-/.env
-/.node-persist
 /node_modules
-.env.prod
-.env.dev
-config.dev.json
-config.prod.json
-publish.bat
-/data.dev.sqlite
-.vscode/settings.json
+.env
