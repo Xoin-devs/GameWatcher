@@ -1,10 +1,10 @@
 const { Events } = require('discord.js');
-const { WatcherManager } = require('../watchers/watcherManager');
-const { SteamExternalWatcher } = require('../watchers/steamExternalWatcher');
-const { SteamInternalWatcher } = require('../watchers/steamInternalWatcher');
-const { TwitterWatcher } = require('../watchers/twitterWatcher');
-const logger = require('../../../shared/logger');
-const ReleaseManager = require('../releaseManager');
+const { WatcherManager } = require('@bot/watchers/watcherManager');
+const { SteamExternalWatcher } = require('@bot/watchers/steamExternalWatcher');
+const { SteamInternalWatcher } = require('@bot/watchers/steamInternalWatcher');
+const { TwitterWatcher } = require('@bot/watchers/twitterWatcher');
+const logger = require('@shared/logger');
+const ReleaseManager = require('@bot/releaseManager');
 
 module.exports = {
     name: Events.ClientReady,

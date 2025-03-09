@@ -1,7 +1,7 @@
 const axios = require('axios');
 const xml2js = require('xml2js');
-const logger = require('../../../shared/logger');
-const SteamFeedType = require('../constants/steamFeedType');
+const logger = require('@shared/logger');
+const SteamFeedType = require('@bot/constants/steamFeedType');
 
 class SteamInternalWrapper {
     constructor() {

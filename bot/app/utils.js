@@ -1,5 +1,5 @@
-const CommandsOption = require('./constants/commandsOption');
-const SourceType = require('./constants/sourceType');
+const CommandsOption = require('@bot/constants/commandsOption');
+const SourceType = require('@bot/constants/sourceType');
 
 function normalizeName(name) {
     return name.toLowerCase().replace(/\s+/g, '');

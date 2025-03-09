@@ -1,7 +1,7 @@
-const DatabaseManager = require('../../../shared/database');
-const MessageUtil = require('../messageUtil');
-const Utils = require('../utils');
-const logger = require('../../../shared/logger');
+const DatabaseManager = require('@shared/database');
+const MessageUtil = require('@bot/messageUtil');
+const Utils = require('@bot/utils');
+const logger = require('@shared/logger');
 
 class Watcher {
     constructor(checkInterval) {

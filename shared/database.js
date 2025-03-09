@@ -1,5 +1,4 @@
 const mariadb = require('mariadb');
-const path = require('path');
 const logger = require('./logger');
 
 class DatabaseManager {

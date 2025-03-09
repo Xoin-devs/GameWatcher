@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const logger = require('../../../shared/logger');
+const logger = require('@shared/logger');
 
 const TWITTER_BASE_URL = 'https://twitter.com';
 const TWITTER_API_URL = 'https://api.x.com/graphql/';

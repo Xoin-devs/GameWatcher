@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const CommandsName = require('../../constants/commandsName');
+const CommandsName = require('@bot/constants/commandsName');
 
 module.exports = {
     data: new SlashCommandBuilder()

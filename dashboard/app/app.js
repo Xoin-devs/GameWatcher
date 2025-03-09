@@ -1,5 +1,6 @@
-require('../../shared/config');
-const logger = require('../../shared/logger');
+require('module-alias/register');
+require('@shared/config');
+const logger = require('@shared/logger');
 const WebServer = require('./webServer');
 
 async function startApp() {

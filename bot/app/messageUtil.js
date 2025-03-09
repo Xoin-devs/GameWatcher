@@ -1,10 +1,10 @@
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
-const client = require('./client');
+const client = require('@bot/client');
 const { convert } = require('html-to-text');
-const PrettyColors = require('./constants/prettyColors');
-const DiscordConstants = require('./constants/discordConstants');
-const DatabaseManager = require('../../shared/database');
-const logger = require('../../shared/logger');
+const PrettyColors = require('@shared/prettyColors');
+const DiscordConstants = require('@bot/constants/discordConstants');
+const DatabaseManager = require('@shared/database');
+const logger = require('@shared/logger');
 
 class MessageUtil {
     static getRandomColor() {

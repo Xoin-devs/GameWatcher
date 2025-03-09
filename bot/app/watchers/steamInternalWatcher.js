@@ -1,8 +1,8 @@
-const { isDev, isProd } = require('../../../shared/config');
-const timeConstants = require('../constants/timeConstants.js');
-const { SteamInternalWrapper } = require('../wrappers/steamInternalWrapper.js');
+const { isDev, isProd } = require('@shared/config');
+const timeConstants = require('@shared/timeConstants.js');
+const { SteamInternalWrapper } = require('@bot/wrappers/steamInternalWrapper.js');
 const { Watcher } = require('./watcher.js');
-const SourceType = require('../constants/sourceType');
+const SourceType = require('@bot/constants/sourceType');
 
 class SteamInternalWatcher extends Watcher {
     constructor() {

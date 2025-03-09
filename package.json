@@ -8,6 +8,12 @@
     "api",
     "dashboard"
   ],
+  "_moduleAliases": {
+    "@shared": "shared",
+    "@bot": "bot/app",
+    "@api": "api/src",
+    "@dashboard": "dashboard/app"
+  },
   "scripts": {
     "start:bot:dev": "npm --prefix bot run start:dev",
     "start:bot:dev:profiling": "npm --prefix bot run start:dev:profiling",

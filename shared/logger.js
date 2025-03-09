@@ -1,6 +1,6 @@
 const path = require('path');
 const chalk = require('chalk');
-const PrettyColors = require('../bot/app/constants/prettyColors');
+const PrettyColors = require('./prettyColors');
 
 class Logger {
     constructor() {

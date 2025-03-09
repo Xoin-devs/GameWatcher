@@ -1,8 +1,8 @@
-const { isDev, isProd } = require('../../../shared/config');
-const timeConstants = require('../constants/timeConstants.js');
-const { TwitterWrapper } = require('../wrappers/twitterWrapper.js');
+const { isDev, isProd } = require('@shared/config');
+const timeConstants = require('@shared/timeConstants.js');
+const { TwitterWrapper } = require('@bot/wrappers/twitterWrapper.js');
 const { Watcher } = require('./watcher');
-const SourceType = require('../constants/sourceType');
+const SourceType = require('@bot/constants/sourceType');
 
 class TwitterWatcher extends Watcher {
     constructor() {
