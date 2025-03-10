@@ -64,12 +64,16 @@ This repository contains the code for both the bot and the dashboard that allows
         SESSION_SECRET=YOUR_SESSION_SECRET
 
         WEB_PORT=3000
+        WEB_URL=http://localhost
 
         DB_HOST=YOUR_DB_HOST
         DB_USER=YOUR_DB_USER
         DB_PASSWORD=YOUR_DB_PASSWORD
         DB_NAME=gamewatcher_dev
         DB_PORT=3306
+
+        API_PORT=8473
+        API_ENDPOINT=http://localhost
         ```
 
 ## Usage
