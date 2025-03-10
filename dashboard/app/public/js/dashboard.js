@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${apiUrl}/api/games/${guildId}`);
             const games = await response.json();
-            
+
             gamesContainer.innerHTML = `
                 <h2>Games List</h2>
                 <div class="list-group">
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const guildId = item.dataset.guildId;
             loadGames(guildId);
-            
+
             // Update active state
             guildItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
@@ -41,9 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
 async function toggleSubscription(guildId, gameId, subscribe) {
     try {
         const method = subscribe ? 'POST' : 'DELETE';
-        const response = await fetch(`${apiUrl}/api/games/${guildId}/${gameId}`, { method });
+        const response = await fetch(`${apiUrl}/api/guilds/${guildId}/games/${gameId}`, { method });
         if (!response.ok) {
-            console.error('Error toggling subscription:', await response.json());
+            const errorData = await response.json();
+            console.error('Error toggling subscription:', errorData);
         }
     } catch (error) {
         console.error('Error toggling subscription:', error);

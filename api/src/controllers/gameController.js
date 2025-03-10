@@ -134,6 +134,28 @@ async function getGamesWithSubscriptionStatus(req, res, next) {
     }
 }
 
+async function linkGameToGuildById(req, res, next) {
+    try {
+        const { guildId, gameId } = req.params;
+        const db = await DatabaseManager.getInstance();
+        await db.linkGameToGuild(guildId, gameId);
+        res.json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function unlinkGameFromGuildById(req, res, next) {
+    try {
+        const { guildId, gameId } = req.params;
+        const db = await DatabaseManager.getInstance();
+        await db.unlinkGameFromGuild(guildId, gameId);
+        res.json({ success: true });
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     getAllGames,
     getGame,
@@ -144,5 +166,7 @@ module.exports = {
     unlinkGameFromGuild,
     updateSourceLastUpdate,
     getGuilds,
-    getGamesWithSubscriptionStatus
+    getGamesWithSubscriptionStatus,
+    linkGameToGuildById,
+    unlinkGameFromGuildById
 };
