@@ -42,15 +42,8 @@ This repository contains the code for both the bot and the dashboard that allows
     ```sh
     npm install
     ```
-
-3. **Configure Your Bot**
-    - Create a new Discord application on the [Discord Developer Portal](https://discord.com/developers/applications).
-    - Create a bot for the application and copy the client ID and secret.
-        - If your bot is already created, you can find the client ID and secret in the OAuth2 tab.
-    - Create a new OAuth2 callback URL
-        - For local development, use `http://localhost:3000/auth/callback`.
-
-4. **Configure Environment Variables**
+    
+3. **Configure Environment Variables**
     - Create `.env.dev` and `.env.prod` files based on the provided templates.
     - Example `.env.dev`:
         ```
@@ -75,6 +68,19 @@ This repository contains the code for both the bot and the dashboard that allows
         API_PORT=8473
         API_ENDPOINT=http://localhost
         ```
+
+4. **Configure Your Bot**
+    - Create a new Discord application and bot from the [Discord Developer Portal](https://discord.com/developers/applications).
+    - Copy the bot token and client ID for the `.env.dev` and `.env.prod` files.
+        - If your bot is already created, you can find the client ID and secret in the OAuth2 tab.
+    - In the Installation section
+        - In context, only allow Guild install
+        - Scopes should be `applications.commands` and `bot`
+        - Permissions should be `Administrator` in develompent
+        - Permissions should be `Attach Files`, `Send Messages`, `Embed Links`, `Send Messages in Threads`,`Use Slash Commands` in production
+    - Create a new OAuth2 callback URL
+        - For local development, use `http://localhost:3000/auth/callback`.
+    - Add the bot to your server
 
 ## Usage
 
