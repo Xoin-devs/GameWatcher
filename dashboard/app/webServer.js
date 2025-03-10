@@ -138,11 +138,9 @@ class WebServer {
             }
         
             try {
-                logger.info(`Fetching guilds for user ${req.user.id} on ${res.locals.apiUrl}/api/guilds`);
                 const response = await fetch(`${res.locals.apiUrl}/api/guilds`);
                 if (!response.ok) {
                     const errorText = await response.text();
-                    logger.error(`Failed to fetch guilds: [${response.status}] with body: ${errorText}`);
                     throw new Error(`Failed to fetch guilds: ${response.status}`);
                 }
                 const guilds = await response.json();
