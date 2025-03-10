@@ -48,7 +48,7 @@ This repository contains the code for both the bot and the dashboard that allows
     - Create a bot for the application and copy the client ID and secret.
         - If your bot is already created, you can find the client ID and secret in the OAuth2 tab.
     - Create a new OAuth2 callback URL
-        - For local development, use `http://localhost:3000/auth/discord/callback`.
+        - For local development, use `http://localhost:3000/auth/callback`.
 
 4. **Configure Environment Variables**
     - Create `.env.dev` and `.env.prod` files based on the provided templates.
