@@ -6,8 +6,9 @@ const { Strategy } = require('passport-discord');
 const path = require('path');
 const https = require('https');
 const DatabaseManager = require('@shared/database');
-const fetch = require('node-fetch');
 const logger = require('@shared/logger');
+
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 class WebServer {
     constructor() {
@@ -140,7 +141,9 @@ class WebServer {
                 logger.info(`Fetching guilds for user ${req.user.id} on ${res.locals.apiUrl}/api/guilds`);
                 const response = await fetch(`${res.locals.apiUrl}/api/guilds`);
                 if (!response.ok) {
-                    throw new Error('Failed to fetch guilds');
+                    const errorText = await response.text();
+                    logger.error(`Failed to fetch guilds: [${response.status}] with body: ${errorText}`);
+                    throw new Error(`Failed to fetch guilds: ${response.status}`);
                 }
                 const guilds = await response.json();
                 const guildDetails = await Promise.all(guilds.map(async (guild) => {
@@ -154,13 +157,10 @@ class WebServer {
                     guilds: guildDetails.filter(g => g !== null)
                 });
             } catch (error) {
-                logger.error('Error fetching guilds:', error);
+                logger.error('Error fetching guilds:', error.message);
                 res.status(500).send('Internal Server Error');
             }
         });
-
-        // Game management API endpoints
-        this.setupGameManagementRoutes();
     }
 
     setupGameManagementRoutes() {
