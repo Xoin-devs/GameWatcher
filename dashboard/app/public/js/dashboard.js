@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadGames(guildId) {
         try {
-            const response = await fetch(`/api/games/${guildId}`);
+            const response = await fetch(`${apiUrl}/api/games/${guildId}`);
             const games = await response.json();
             
             gamesContainer.innerHTML = `
@@ -41,45 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 async function toggleSubscription(guildId, gameId, subscribe) {
     try {
         const method = subscribe ? 'POST' : 'DELETE';
-        const response = await fetch(`/api/games/${guildId}/${gameId}`, { method });
+        const response = await fetch(`${apiUrl}/api/games/${guildId}/${gameId}`, { method });
         if (!response.ok) {
             console.error('Error toggling subscription:', await response.json());
         }
     } catch (error) {
         console.error('Error toggling subscription:', error);
     }
-}
-
-async function removeGame(guildId, gameName) {
-    if (!confirm(`Are you sure you want to remove ${gameName}?`)) return;
-    
-    try {
-        const response = await fetch(`/api/games/${guildId}/${encodeURIComponent(gameName)}`, {
-            method: 'DELETE'
-        });
-        if (response.ok) {
-            location.reload();
-        }
-    } catch (error) {
-        console.error('Error removing game:', error);
-    }
-}
-
-function addGame(guildId) {
-    const name = prompt('Enter game name:');
-    if (!name) return;
-    
-    fetch(`/api/games/${guildId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name })
-    })
-    .then(response => {
-        if (response.ok) {
-            location.reload();
-        }
-    })
-    .catch(error => console.error('Error adding game:', error));
 }

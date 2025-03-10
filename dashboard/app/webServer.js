@@ -6,6 +6,7 @@ const { Strategy } = require('passport-discord');
 const path = require('path');
 const https = require('https');
 const DatabaseManager = require('@shared/database');
+const fetch = require('node-fetch');
 const logger = require('@shared/logger');
 
 class WebServer {
@@ -21,8 +22,7 @@ class WebServer {
         this.app.set('views', path.join(__dirname, 'views'));
         this.app.use(express.static(path.join(__dirname, 'public')));
         this.app.use(express.json());
-        
-        // Re-enable session middleware
+
         this.app.use(session({
             store: new SQLiteStore(),
             secret: process.env.SESSION_SECRET || 'your-secret-key',
@@ -36,6 +36,15 @@ class WebServer {
 
         this.app.use(passport.initialize());
         this.app.use(passport.session());
+
+        const api_port = process.env.API_PORT || 8473;
+        const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
+        const api_url = `${api_endpoint}:${api_port}`;
+
+        this.app.use((req, res, next) => {
+            res.locals.apiUrl = api_url;
+            next();
+        });
     }
 
     setupAuth() {
@@ -44,12 +53,11 @@ class WebServer {
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
             callbackURL: process.env.DISCORD_CALLBACK_URL,
             scope: ['identify', 'guilds'],
-            state: true // Enable state verification
+            state: true
         }, async (accessToken, refreshToken, profile, done) => {
             try {
                 const db = await DatabaseManager.getInstance();
-                // Removed db.saveSession(profile.id, profile.id, accessToken, Date.now() + 604800000);
-                profile.accessToken = accessToken; // Store access token in profile
+                profile.accessToken = accessToken;
                 return done(null, profile);
             } catch (error) {
                 return done(error, null);
@@ -127,20 +135,35 @@ class WebServer {
             if (!req.user) {
                 return res.redirect('/');
             }
-            const db = await DatabaseManager.getInstance();
-            const guilds = await db.getGuilds();
-            const guildDetails = await Promise.all(guilds.map(async (guild) => {
-                if (this.userHasGuildAccess(guild, req.user)) {
-                    return await this.fetchGuildDetails(guild.id);
+        
+            try {
+                logger.info(`Fetching guilds for user ${req.user.id} on ${res.locals.apiUrl}/api/guilds`);
+                const response = await fetch(`${res.locals.apiUrl}/api/guilds`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch guilds');
                 }
-                return null;
-            }));
-            res.render('dashboard', { 
-                user: req.user,
-                guilds: guildDetails.filter(g => g !== null)
-            });
+                const guilds = await response.json();
+                const guildDetails = await Promise.all(guilds.map(async (guild) => {
+                    if (this.userHasGuildAccess(guild, req.user)) {
+                        return await this.fetchGuildDetails(guild.id);
+                    }
+                    return null;
+                }));
+                res.render('dashboard', { 
+                    user: req.user,
+                    guilds: guildDetails.filter(g => g !== null)
+                });
+            } catch (error) {
+                logger.error('Error fetching guilds:', error);
+                res.status(500).send('Internal Server Error');
+            }
         });
 
+        // Game management API endpoints
+        this.setupGameManagementRoutes();
+    }
+
+    setupGameManagementRoutes() {
         // API routes
         this.app.get('/api/games/:guildId', async (req, res) => {
             const db = await DatabaseManager.getInstance();
@@ -155,11 +178,6 @@ class WebServer {
             res.json(result);
         });
 
-        // Game management API endpoints
-        this.setupGameManagementRoutes();
-    }
-
-    setupGameManagementRoutes() {
         this.app.post('/api/games/:guildId', async (req, res) => {
             const db = await DatabaseManager.getInstance();
             const { name, sources, releaseDate } = req.body;
@@ -214,8 +232,6 @@ class WebServer {
             }
         });
     }
-
-    // Removed ensureAuthenticated method
 
     userHasGuildAccess(guild, user) {
         if (!user || !user.guilds) {

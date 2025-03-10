@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/games', gameRoutes);
+app.use('/api', gameRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
