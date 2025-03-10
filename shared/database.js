@@ -70,8 +70,23 @@ class DatabaseManager {
         );
     }
 
+    async removeGuildGames(guildId) {
+        logger.debug(`Removing guild games associations for guild ID ${guildId}`);
+        await this.pool.query('DELETE FROM guild_games WHERE guild_id = ?', [guildId]);
+        logger.debug(`Successfully removed guild games for guild ID ${guildId}`);
+    }
+
     async removeGuild(guildId) {
+        logger.debug(`Removing guild ID ${guildId} from database`);
         await this.pool.query('DELETE FROM guilds WHERE id = ?', [guildId]);
+        logger.info(`Successfully removed guild ID ${guildId}`);
+    }
+    
+    async cleanupGuild(guildId) {
+        logger.debug(`Starting full cleanup for guild ID ${guildId}`);
+        await this.removeGuildGames(guildId);
+        await this.removeGuild(guildId);
+        logger.info(`Completed full cleanup for guild ID ${guildId}`);
     }
 
     async getGuilds() {
