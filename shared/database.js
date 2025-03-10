@@ -174,6 +174,7 @@ class DatabaseManager {
                 [game.id]
             );
             result.push({
+                id: game.id,
                 name: game.name,
                 sources: sources.map(s => ({
                     [s.type]: s.source_id,

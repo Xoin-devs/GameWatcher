@@ -115,6 +115,25 @@ async function getGuilds(req, res, next) {
     }
 }
 
+async function getGamesWithSubscriptionStatus(req, res, next) {
+    try {
+        const db = await DatabaseManager.getInstance();
+        const guildId = req.params.guildId;
+        const allGames = await db.getGames();
+        const guildGames = await db.getGuildGames(guildId);
+        const guildGameIds = new Set(guildGames.map(g => g.id));
+        
+        const result = allGames.map(game => ({
+            ...game,
+            subscribed: guildGameIds.has(game.id)
+        }));
+        
+        res.json(result);
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     getAllGames,
     getGame,
@@ -124,5 +143,6 @@ module.exports = {
     linkGameToGuild,
     unlinkGameFromGuild,
     updateSourceLastUpdate,
-    getGuilds
+    getGuilds,
+    getGamesWithSubscriptionStatus
 };

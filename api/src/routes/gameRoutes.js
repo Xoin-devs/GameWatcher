@@ -5,6 +5,7 @@ const router = express.Router();
 
 // Move specific routes before parameterized routes
 router.get('/guilds', gameController.getGuilds);
+router.get('/games/:guildId', gameController.getGamesWithSubscriptionStatus);
 router.get('/', gameController.getAllGames);
 
 // Parameterized routes after specific routes
