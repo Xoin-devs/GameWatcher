@@ -84,9 +84,20 @@ const mergedPackageJson = {
   },
 };
 
+// Determine the appropriate subdirectory for each project
+const getProjectSubdir = (projectName) => {
+  switch(projectName) {
+    case 'api': return './src';
+    case 'bot': return './app';
+    case 'dashboard': return './app';
+    default: return '.';
+  }
+};
+
 // Only include the @shared module alias, not all aliases
 mergedPackageJson._moduleAliases = {
-  '@shared': './shared'
+  '@shared': './shared',
+  [`@${project}`]: getProjectSubdir(project)
 };
 
 // Write the merged package.json to the target directory
