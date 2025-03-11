@@ -2,3 +2,4 @@
 .env.dev
 .vscode/settings.json
 /node_modules
+/todo.md

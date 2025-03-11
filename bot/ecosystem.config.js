@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'game-watcher',
+            name: 'gamewatcher-bot',
             script: 'app/app.js',
             args: '',
             instances: 1,
