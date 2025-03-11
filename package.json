@@ -23,12 +23,22 @@
     "start:dashboard:dev": "npm --prefix dashboard run start:dev",
     "start:dashboard:prod": "npm --prefix dashboard run start:prod",
     "deployCommands:dev": "npm --prefix bot run deployCommands:dev",
-    "deployCommands:prod": "npm --prefix bot run deployCommands:prod"
+    "deployCommands:prod": "npm --prefix bot run deployCommands:prod",
+    "build:bot": "node scripts/deploy.js bot",
+    "build:api": "node scripts/deploy.js api",
+    "build:dashboard": "node scripts/deploy.js dashboard",
+    "build:all": "npm run build:bot && npm run build:api && npm run build:dashboard",
+    "deploy:bot": "npm run build:bot && node scripts/deployToVPS.js --project bot",
+    "deploy:api": "npm run build:api && node scripts/deployToVPS.js --project api",
+    "deploy:dashboard": "npm run build:bodashboardt && node scripts/deployToVPS.js --project dashboard"
   },
   "dependencies": {
     "chalk": "^4.1.2",
     "dotenv": "^16.4.7",
     "mariadb": "^3.4.0",
     "module-alias": "^2.2.3"
+  },
+  "devDependencies": {
+    "ssh2-sftp-client": "^11.0.0"
   }
 }
