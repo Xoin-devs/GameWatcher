@@ -146,17 +146,17 @@ npm run build:all
 
 Deploy the api to a production environment:
 ```sh
-npm run deploy:api --user USER_NAME --host IP --path FOLDER --password FOLDER
+npm run deploy:api --user USER_NAME --host IP --path FOLDER --password PASSWORD
 ```
 
 Deploy the bot to a production environment:
 ```sh
-npm run deploy:bot --user USER_NAME --host IP --path FOLDER --password FOLDER
+npm run deploy:bot --user USER_NAME --host IP --path FOLDER --password PASSWORD
 ```
 
 Deploy the dashboard to a production environment:
 ```sh
-npm run deploy:dashboard --user USER_NAME --host IP --path FOLDER --password FOLDER
+npm run deploy:dashboard --user USER_NAME --host IP --path FOLDER --password PASSWORD
 ```
 
 ### Start deployed projects
