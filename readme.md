@@ -120,6 +120,57 @@ Deploy slash commands for production:
 npm run deployCommands:prod
 ```
 
+### Build Scripts
+
+build the api project:
+```sh
+npm run build:api
+```
+
+Build the bot project:
+```sh
+npm run build:bot
+```
+
+Build the dashboard project:
+```sh
+npm run build:dashboard
+```
+
+Build all projects:
+```sh
+npm run build:all
+```
+
+### Deployment Scripts
+
+Deploy the api to a production environment:
+```sh
+npm run deploy:api --user USER_NAME --host IP --path FOLDER --password PASSWORD
+```
+
+Deploy the bot to a production environment:
+```sh
+npm run deploy:bot --user USER_NAME --host IP --path FOLDER --password PASSWORD
+```
+
+Deploy the dashboard to a production environment:
+```sh
+npm run deploy:dashboard --user USER_NAME --host IP --path FOLDER --password PASSWORD
+```
+
+### Start deployed projects
+
+install the npm packages for each project
+```sh
+npm install
+```
+
+each project use pm2 to start the project, so you can use the following command to start the project
+```sh
+pm2 start ecosystem.config.js --env production
+```
+
 ### Project Structure
 
 ```
