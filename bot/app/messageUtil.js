@@ -1,4 +1,4 @@
-const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder, WebhookClient } = require('discord.js');
 const client = require('@bot/client');
 const { convert } = require('html-to-text');
 const PrettyColors = require('@shared/prettyColors');
@@ -31,16 +31,23 @@ class MessageUtil {
         }
     }
 
+    // Tweet methods
     async sendTweetToAllChannels(tweet, gameName) {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
-            await this.sendTweetMessage(tweet, guild.channel_id);
+            const embed = this.buildTweetEmbed(tweet);
+            const files = [new AttachmentBuilder('./assets/icon_twitter.png')];
+
+            if (guild.webhook_url) {
+                await MessageUtil.sendToWebhook(guild.webhook_url, { embeds: [embed], files });
+            } else {
+                await MessageUtil.sendToChannel(guild.channel_id, { embeds: [embed], files });
+            }
         }
     }
 
-    async sendTweetMessage(tweet, channelId) {
-        const twitterIcon = new AttachmentBuilder('./assets/icon_twitter.png');
+    buildTweetEmbed(tweet) {
         const content = MessageUtil.truncateContent(tweet.text, '... Read more on Twitter');
         const embed = new EmbedBuilder()
             .setTitle(`${tweet.name} on X`)
@@ -53,22 +60,28 @@ class MessageUtil {
             embed.setImage(tweet.media[0].url);
         }
 
-        const channel = client.channels.cache.get(channelId);
-        if (channel) {
-            await channel.send({ embeds: [embed], files: [twitterIcon] });
-        }
+        return embed;
     }
 
+    // Steam News methods
     async sendSteamNewsToAllChannels(newsItem, gameName) {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
             logger.debug(`Sending news about ${gameName} to guild ${guild.id}`);
-            await this.sendSteamNewsMessage(newsItem, guild.channel_id);
+            const embed = this.buildSteamNewsEmbed(newsItem);
+            const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
+            const files = [new AttachmentBuilder(`./assets/${iconName}`)];
+
+            if (guild.webhook_url) {
+                await MessageUtil.sendToWebhook(guild.webhook_url, { embeds: [embed], files });
+            } else {
+                await MessageUtil.sendToChannel(guild.channel_id, { embeds: [embed], files });
+            }
         }
     }
 
-    async sendSteamNewsMessage(newsItem, channelId) {
+    buildSteamNewsEmbed(newsItem) {
         let content = convert(newsItem.contents, {
             wordwrap: null,
             preserveNewlines: true,
@@ -80,8 +93,6 @@ class MessageUtil {
         content = MessageUtil.truncateContent(content, '... Read more on Steam');
 
         const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
-        const icon = new AttachmentBuilder(`./assets/${iconName}`);
-
         const embed = new EmbedBuilder()
             .setTitle(newsItem.title)
             .setURL(newsItem.url)
@@ -90,29 +101,54 @@ class MessageUtil {
             .setImage(newsItem.image)
             .setFooter({ text: newsItem.feedname, iconURL: `attachment://${iconName}` });
 
-        const channel = client.channels.cache.get(channelId);
-        if (channel) {
-            await channel.send({ embeds: [embed], files: [icon] });
-        }
+        return embed;
     }
 
+    // Game Release methods
     static async sendGameReleaseToAllChannels(game) {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuilds();
         for (let guild of guilds) {
-            await this.sendGameReleaseMessage(game, guild.channel_id);
+            const embed = this.buildGameReleaseEmbed(game);
+
+            if (guild.webhook_url) {
+                await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
+            } else {
+                await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+            }
         }
     }
 
-    static async sendGameReleaseMessage(game, channelId) {
-        const embed = new EmbedBuilder()
+    static buildGameReleaseEmbed(game) {
+        return new EmbedBuilder()
             .setTitle(`🎉 ${game} has been released!`)
             .setColor(PrettyColors.GREEN)
             .setFooter({ text: 'Release date' });
+    }
 
+    // Generic sending methods
+    static async sendToChannel(channelId, messageOptions) {
+        logger.debug(`Sending game release throught channel`);
         const channel = client.channels.cache.get(channelId);
         if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send(messageOptions);
+            return true;
+        }
+        return false;
+    }
+
+    static async sendToWebhook(webhookUrl, messageOptions) {
+        logger.debug(`Sending game release throught webhook`);
+        try {
+            const webhookId = webhookUrl.split('/').slice(-2)[0];
+            const webhookToken = webhookUrl.split('/').slice(-1)[0];
+
+            const webhook = new WebhookClient({ id: webhookId, token: webhookToken });
+            await webhook.send(messageOptions);
+            return true;
+        } catch (error) {
+            logger.error(`Error sending webhook message: ${error.message}`);
+            return false;
         }
     }
 }
