@@ -282,6 +282,15 @@ class DatabaseManager {
         return rows[0].webhook_url;
     }
 
+    async getGamesReleasingOn(date) {
+        const rows = await this.pool.query('SELECT id, name, release_date FROM games WHERE release_date = ?', [date]);
+        return rows.map(game => ({
+            id: game.id,
+            name: game.name,
+            releaseDate: game.release_date
+        }));
+    }
+
     async close() {
         await this.pool.end();
     }

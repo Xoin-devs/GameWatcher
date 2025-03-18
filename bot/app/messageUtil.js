@@ -41,6 +41,8 @@ class MessageUtil {
                 continue;
             }
 
+            logger.debug(`Sending tweet to guild ${guild.id} for game ${gameName}`);
+
             const embed = this.buildTweetEmbed(tweet);
             const files = [new AttachmentBuilder('./assets/icon_twitter.png')];
 
@@ -78,6 +80,8 @@ class MessageUtil {
                 continue;
             }
 
+            logger.debug(`Sending Steam news to guild ${guild.id} for game ${gameName}`);
+
             const embed = this.buildSteamNewsEmbed(newsItem);
             const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
             const files = [new AttachmentBuilder(`./assets/${iconName}`)];
@@ -114,30 +118,99 @@ class MessageUtil {
     }
 
     // Game Release methods
-    static async sendGameReleaseToAllChannels(game) {
-        const db = await DatabaseManager.getInstance();
-        const guilds = await db.getGuilds();
-        for (let guild of guilds) {
-            const embed = this.buildGameReleaseEmbed(game);
+    static async sendGameReleaseToAllGuilds(game) {
+        try {
+            const db = await DatabaseManager.getInstance();
+            const guilds = await db.getGuildsForGame(game.name);
+            const gameName = game.name;
 
-            if (guild.webhook_url) {
-                await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
-            } else {
-                await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+            if (!guilds || guilds.length === 0) {
+                logger.warn(`No guilds found for game ${gameName}`);
+                return;
             }
+
+            logger.info(`Sending release announcement for ${gameName} to ${guilds.length} guilds`);
+
+            for (const guild of guilds) {
+                try {
+                    const embed = this.buildGameReleaseEmbed(gameName);
+
+                    if (guild.webhook_url) {
+                        await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
+                    } else if (guild.channel_id) {
+                        await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+                    } else {
+                        logger.warn(`No webhook URL or channel ID for guild ${guild.id}`);
+                    }
+                } catch (error) {
+                    logger.error(`Failed to send release announcement for ${gameName} to guild ${guild.id}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            logger.error(`Error in sendGameReleaseToAllGuilds: ${error.message}`);
         }
     }
 
-    static buildGameReleaseEmbed(game) {
+    static async sendGameReleaseTeaseToAllGuilds(game) {
+        try {
+            const gameName = game.name;
+            const db = await DatabaseManager.getInstance();
+            const guilds = await db.getGuildsForGame(gameName);
+            const releaseDate = game.releaseDate;
+
+            if (!guilds || guilds.length === 0) {
+                logger.warn(`No guilds found for game ${gameName}`);
+                return;
+            }
+
+            logger.info(`Sending teaser for ${gameName} to ${guilds.length} guilds`);
+
+            for (const guild of guilds) {
+                try {
+                    const embed = this.buildGameReleaseTeaseEmbed(gameName, releaseDate);
+
+                    if (guild.webhook_url) {
+                        await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
+                    } else if (guild.channel_id) {
+                        await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+                    } else {
+                        logger.warn(`No webhook URL or channel ID for guild ${guild.id}`);
+                    }
+                } catch (error) {
+                    logger.error(`Failed to send teaser for ${gameName} to guild ${guild.id}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            logger.error(`Error in sendGameReleaseTeaseToAllChannels: ${error.message}`);
+        }
+    }
+
+    static buildGameReleaseEmbed(gameName) {
         return new EmbedBuilder()
-            .setTitle(`🎉 ${game} has been released!`)
+            .setTitle(`🔥 ${gameName} is Live!`)
+            .setDescription(`The wait is over and **${gameName}** is now available to play. Dive in and experience the excitement!`)
             .setColor(PrettyColors.GREEN)
-            .setFooter({ text: 'Release date' });
+            .setFooter({ text: 'Enjoy the game!' })
+            .setTimestamp();
+    }
+
+    static buildGameReleaseTeaseEmbed(gameName, releaseDate) {
+        const formattedDate = new Date(releaseDate).toLocaleDateString('en-US', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        return new EmbedBuilder()
+            .setTitle(`🚀 Coming Soon: ${gameName}`)
+            .setDescription(`Hold on tight! **${gameName}** will be launching on ${formattedDate}.\nStay tuned for more updates!`)
+            .setColor(PrettyColors.ORANGE)
+            .setFooter({ text: 'Get hyped!' })
+            .setTimestamp();
     }
 
     // Generic sending methods
     static async sendToChannel(channelId, messageOptions) {
-        logger.debug(`Sending game release throught channel`);
         const channel = client.channels.cache.get(channelId);
         if (channel) {
             await channel.send(messageOptions);
@@ -147,7 +220,6 @@ class MessageUtil {
     }
 
     static async sendToWebhook(webhookUrl, messageOptions) {
-        logger.debug(`Sending game release throught webhook`);
         try {
             const webhookId = webhookUrl.split('/').slice(-2)[0];
             const webhookToken = webhookUrl.split('/').slice(-1)[0];
