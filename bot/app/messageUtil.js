@@ -45,11 +45,14 @@ class MessageUtil {
 
             const embed = this.buildTweetEmbed(tweet);
             const files = [new AttachmentBuilder('./assets/icon_twitter.png')];
+            
+            // Add content field with game name for better mobile notifications
+            const messageContent = `[Twitter] ${gameName} | Tweet from ${tweet.name}`;
 
             if (guild.webhook_url) {
-                await MessageUtil.sendToWebhook(guild.webhook_url, { embeds: [embed], files });
+                await MessageUtil.sendToWebhook(guild.webhook_url, { content: messageContent, embeds: [embed], files });
             } else {
-                await MessageUtil.sendToChannel(guild.channel_id, { embeds: [embed], files });
+                await MessageUtil.sendToChannel(guild.channel_id, { content: messageContent, embeds: [embed], files });
             }
         }
     }
@@ -85,11 +88,14 @@ class MessageUtil {
             const embed = this.buildSteamNewsEmbed(newsItem);
             const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
             const files = [new AttachmentBuilder(`./assets/${iconName}`)];
+            
+            // Add content field with game name for better mobile notifications
+            const messageContent = `[Steam] ${gameName}: ${newsItem.title}`;
 
             if (guild.webhook_url) {
-                await MessageUtil.sendToWebhook(guild.webhook_url, { embeds: [embed], files });
+                await MessageUtil.sendToWebhook(guild.webhook_url, { content: messageContent, embeds: [embed], files });
             } else {
-                await MessageUtil.sendToChannel(guild.channel_id, { embeds: [embed], files });
+                await MessageUtil.sendToChannel(guild.channel_id, { content: messageContent, embeds: [embed], files });
             }
         }
     }
@@ -134,11 +140,12 @@ class MessageUtil {
             for (const guild of guilds) {
                 try {
                     const embed = this.buildGameReleaseEmbed(gameName);
+                    const messageContent = `[Release] ${gameName} has officially released!`;
 
                     if (guild.webhook_url) {
-                        await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
+                        await this.sendToWebhook(guild.webhook_url, { content: messageContent, embeds: [embed] });
                     } else if (guild.channel_id) {
-                        await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+                        await this.sendToChannel(guild.channel_id, { content: messageContent, embeds: [embed] });
                     } else {
                         logger.warn(`No webhook URL or channel ID for guild ${guild.id}`);
                     }
@@ -168,11 +175,12 @@ class MessageUtil {
             for (const guild of guilds) {
                 try {
                     const embed = this.buildGameReleaseTeaseEmbed(gameName, releaseDate);
+                    const messageContent = `[Release] ${gameName} is coming soon!`;
 
                     if (guild.webhook_url) {
-                        await this.sendToWebhook(guild.webhook_url, { embeds: [embed] });
+                        await this.sendToWebhook(guild.webhook_url, { content: messageContent, embeds: [embed] });
                     } else if (guild.channel_id) {
-                        await this.sendToChannel(guild.channel_id, { embeds: [embed] });
+                        await this.sendToChannel(guild.channel_id, { content: messageContent, embeds: [embed] });
                     } else {
                         logger.warn(`No webhook URL or channel ID for guild ${guild.id}`);
                     }
