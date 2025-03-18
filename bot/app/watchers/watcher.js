@@ -17,7 +17,7 @@ class Watcher {
 
     getCronExpression() {
         const time = Utils.msToTime(this.checkInterval);
-        logger.debug(`Watcher [${this.constructor.name}] configuration is ${time.days} days, ${time.hours} hours and ${time.minutes} minutes`);
+        logger.info(`Watcher [${this.constructor.name}] configuration is ${time.days} days, ${time.hours} hours and ${time.minutes} minutes`);
 
         let cronExpression = "";
         if (time.hours === 0 && time.days === 0 && time.minutes > 0) {

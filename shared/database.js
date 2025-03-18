@@ -32,7 +32,8 @@ class DatabaseManager {
         await this.pool.query(`
             CREATE TABLE IF NOT EXISTS guilds (
                 id VARCHAR(255) PRIMARY KEY,
-                channel_id VARCHAR(255) NOT NULL
+                channel_id VARCHAR(255) NOT NULL,
+                webhook_url VARCHAR(255) NOT NULL
             );
         `);
         await this.pool.query(`
@@ -63,10 +64,10 @@ class DatabaseManager {
         `);
     }
 
-    async addGuild(guildId, channelId) {
+    async addGuild(guildId, channelId, webhookUrl) {
         await this.pool.query(
-            'INSERT INTO guilds (id, channel_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id)',
-            [guildId, channelId]
+            'INSERT INTO guilds (id, channel_id, webhook_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), webhook_url = VALUES(webhook_url)',
+            [guildId, channelId, webhookUrl]
         );
     }
 
@@ -95,7 +96,7 @@ class DatabaseManager {
 
     async getGuildsForGame(gameName) {
         return await this.pool.query(`
-            SELECT guilds.id, guilds.channel_id
+            SELECT guilds.id, guilds.channel_id, guilds.webhook_url
             FROM guilds
             JOIN guild_games gg ON guilds.id = gg.guild_id
             JOIN games g ON gg.game_id = g.id
@@ -252,6 +253,33 @@ class DatabaseManager {
         `, [guildId, gameName]);
         if (rows.length === 0) return null;
         return rows[0];
+    }
+
+    async updateGuildWebhook(guildId, webhookUrl) {
+        logger.debug(`Updating webhook URL for guild ID ${guildId}`);
+        try {
+            const result = await this.pool.query(
+                'UPDATE guilds SET webhook_url = ? WHERE id = ?',
+                [webhookUrl, guildId]
+            );
+            
+            if (result.affectedRows === 0) {
+                logger.warn(`Failed to update webhook URL for guild ID ${guildId}: Guild not found`);
+                return false;
+            }
+            
+            logger.info(`Successfully updated webhook URL for guild ID ${guildId}`);
+            return true;
+        } catch (error) {
+            logger.error(`Error updating webhook URL for guild ID ${guildId}: ${error.message}`);
+            return false;
+        }
+    }
+
+    async getGuildWebhook(guildId) {
+        const rows = await this.pool.query('SELECT webhook_url FROM guilds WHERE id = ?', [guildId]);
+        if (rows.length === 0) return null;
+        return rows[0].webhook_url;
     }
 
     async close() {

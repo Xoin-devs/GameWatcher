@@ -20,7 +20,7 @@ class WatcherManager {
     async startAll() {
         for (const watcher of this.watchers) {
             const cronExpression = watcher.getCronExpression();
-            logger.info(`Starting watcher with cron expression ${cronExpression}`);
+            logger.debug(`Starting watcher with cron expression ${cronExpression}`);
             cron.schedule(cronExpression, async () => {
                 await watcher.checkNews();
             });

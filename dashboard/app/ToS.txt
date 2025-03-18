@@ -1,0 +1,32 @@
+Terms of Service
+Last Updated: 03/17/2025
+
+Acceptance of Terms
+By using the GameWatcher Discord Bot (the “Bot”), you agree to these Terms of Service. If you do not agree, do not use the Bot.
+
+License
+We grant you a limited, non-exclusive, and non-transferable license to use the Bot for its intended purposes in connection with your Discord experience.
+
+User Conduct
+You agree not to use the Bot for any unlawful, abusive, or harmful activities. You shall not attempt to reverse-engineer, copy, or reproduce any part of the Bot.
+
+Data Collection and Use
+The Bot may collect certain data (see the Privacy Policy). By using the Bot, you consent to the collection and processing of such data in accordance with our Privacy Policy.
+
+Intellectual Property
+All intellectual property rights in the Bot, including the source code, are the exclusive property of the developers. You may not reproduce or distribute any part of the Bot without prior written consent.
+
+Modifications and Termination
+We reserve the right to modify, suspend, or terminate access to the Bot at any time without liability. We may update these terms periodically, and continued use of the Bot indicates acceptance of the modified terms.
+
+Disclaimers and Limitation of Liability
+The Bot is provided "as is" without warranties of any kind. We are not liable for any direct, indirect, or consequential damages arising from your use of the Bot.
+
+Third-Party Services
+The Bot may integrate with third-party services (e.g., Discord, Steam, Twitter). Your use of such services is subject to their respective terms and policies. We are not responsible for the practices or content of these third parties.
+
+Governing Law
+These Terms shall be governed by the laws of the jurisdiction in which the Bot’s primary operator is established, without regard to conflict-of-law provisions.
+
+Contact Information
+For questions or concerns regarding these Terms or the Bot, please contact us at [Insert Contact Email].
