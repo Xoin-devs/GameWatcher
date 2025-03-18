@@ -1,0 +1,35 @@
+Privacy Policy
+Last Updated: 03/17/2025
+
+Information We Collect
+
+User Data: When using the Bot, your Discord user ID, username, and associated profile information may be collected.
+Usage Data: We collect usage information such as commands issued, channels used, and basic analytics to improve the Bot’s functionality.
+Log Data: Technical data, such as IP addresses and error logs, may be collected for troubleshooting and security purposes.
+How We Use Your Information
+
+Providing and Improving the Bot: Your data is used to operate the Bot, maintain its functionality, and enhance user experience.
+Communication: We may use your contact information to send you updates or important notices related to the Bot.
+Analytics: Data collected for usage statistics helps us better understand user behavior and optimize the Bot.
+Data Sharing and Disclosure
+
+Service Providers: We may share minimal data with trusted third-party service providers who assist with hosting, monitoring, or analytics.
+Legal Requirements: We may disclose your data in response to legal obligations, such as subpoenas, or to protect the rights and safety of users.
+No Sale of Personal Data: We do not sell or lease your personal data to third parties.
+Data Retention and Security
+
+Retention: Personal data will be retained only as long as necessary to fulfill the purposes for which it is collected.
+Security Measures: We employ industry-standard security measures to protect your data. However, no system is entirely infallible.
+User Rights and Choices
+
+Access and Correction: You may request access to your data or corrections if it’s inaccurate.
+Opt-Out: You may discontinue using the Bot at any time. Note that some data may be retained for legal or administrative reasons.
+Contact: To exercise your rights, please contact us at our Discord server.
+Compliance with Discord and Industry Standards
+The Bot is designed in compliance with Discord’s Developer Terms of Service, and we adhere to industry standards for the collection, storage, and security of personal information.
+
+Changes to This Policy
+We may update this Privacy Policy from time to time. Continued use of the Bot after changes constitutes acceptance of the revised policy. We encourage you to review this page periodically.
+
+Contact Information
+For any questions about this Privacy Policy or our data practices, please contact us at our Discord server.
