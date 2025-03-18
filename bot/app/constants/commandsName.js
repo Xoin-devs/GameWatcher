@@ -6,4 +6,5 @@ module.exports = {
     UPDATE_GAME: 'update-game',
     GET_GAME: 'get-game',
     HERE: 'here',
+    INFO: 'info',
 };
