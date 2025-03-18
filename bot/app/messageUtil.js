@@ -36,6 +36,11 @@ class MessageUtil {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
+            if (!guild.channel_id && !guild.webhook_url) {
+                logger.error(`No channel_id or webhook_url for guild ${guild.id}`);
+                continue;
+            }
+
             const embed = this.buildTweetEmbed(tweet);
             const files = [new AttachmentBuilder('./assets/icon_twitter.png')];
 
@@ -68,7 +73,11 @@ class MessageUtil {
         const db = await DatabaseManager.getInstance();
         const guilds = await db.getGuildsForGame(gameName);
         for (let guild of guilds) {
-            logger.debug(`Sending news about ${gameName} to guild ${guild.id}`);
+            if (!guild.channel_id && !guild.webhook_url) {
+                logger.error(`No channel_id or webhook_url for guild ${guild.id}`);
+                continue;
+            }
+
             const embed = this.buildSteamNewsEmbed(newsItem);
             const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
             const files = [new AttachmentBuilder(`./assets/${iconName}`)];
