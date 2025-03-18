@@ -23,6 +23,10 @@ class SteamInternalWrapper {
                 newsItems = [newsItems];
             }
 
+            if (newsItems.length > 1) {
+                newsItems = newsItems.slice(0, 1);
+            }
+
             const mappedItems = newsItems.map(item => ({
                 id: item?.guid?._ || null,
                 title: item.title,

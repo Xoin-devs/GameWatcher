@@ -45,7 +45,7 @@ class MessageUtil {
 
             const embed = this.buildTweetEmbed(tweet);
             const files = [new AttachmentBuilder('./assets/icon_twitter.png')];
-            
+
             // Add content field with game name for better mobile notifications
             const messageContent = `[Twitter] ${gameName} | Tweet from ${tweet.name}`;
 
@@ -88,7 +88,7 @@ class MessageUtil {
             const embed = this.buildSteamNewsEmbed(newsItem);
             const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
             const files = [new AttachmentBuilder(`./assets/${iconName}`)];
-            
+
             // Add content field with game name for better mobile notifications
             const messageContent = `[Steam] ${gameName}: ${newsItem.title}`;
 
@@ -100,16 +100,60 @@ class MessageUtil {
         }
     }
 
-    buildSteamNewsEmbed(newsItem) {
-        let content = convert(newsItem.contents, {
+    static convertHtmlToPlainText(html) {
+        if (!html) return '';
+
+        const text = convert(html, {
             wordwrap: null,
             preserveNewlines: true,
+            formatters: {
+                'bold': function (elem, walk, builder, formatOptions) {
+                    builder.addInline('**');
+                    walk(elem.children, builder);
+                    builder.addInline('**');
+                },
+                'italic': function (elem, walk, builder, formatOptions) {
+                    builder.addInline('*');
+                    walk(elem.children, builder);
+                    builder.addInline('*');
+                },
+                'underline': function (elem, walk, builder, formatOptions) {
+                    builder.addInline('__');
+                    walk(elem.children, builder);
+                    builder.addInline('__');
+                },
+                'iframe': function (elem, walk, builder, formatOptions) {
+                    builder.openBlock();
+                    builder.addInline('[▶️ Youtube Video](' + elem.attribs.src + ')');
+                    builder.closeBlock();
+                },
+                'steamLink': function (elem, walk, builder, formatOptions) {
+                    builder.openBlock();
+                    builder.addInline('[');
+                    walk(elem.children, builder);
+                    builder.addInline('](' + elem.attribs.href + ')');
+                    builder.closeBlock();
+                }
+            },
             selectors: [
-                { selector: 'a', options: { hideLinkHrefIfSameAsText: true } },
-                { selector: 'img', format: 'skip' }
+                { selector: 'a', format: 'steamLink' },
+                { selector: 'img', format: 'skip' },
+                { selector: 'b', format: 'bold' },
+                { selector: 'strong', format: 'bold' },
+                { selector: 'i', format: 'italic' },
+                { selector: 'em', format: 'italic' },
+                { selector: 'u', format: 'underline' },
+                { selector: 'iframe', format: 'iframe' }
             ]
         });
-        content = MessageUtil.truncateContent(content, '... Read more on Steam');
+
+        // Clean up any excessive whitespace
+        return text.replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    buildSteamNewsEmbed(newsItem) {
+        let content = MessageUtil.convertHtmlToPlainText(newsItem.contents);
+        content = MessageUtil.truncateContent(content, `...\n[Read more on Steam](${newsItem.url})`);
 
         const iconName = MessageUtil.getIconNameFromFeedname(newsItem.feedname);
         const embed = new EmbedBuilder()
