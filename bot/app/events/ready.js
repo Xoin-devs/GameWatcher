@@ -6,6 +6,7 @@ const { TwitterWatcher } = require('@bot/watchers/twitterWatcher');
 const logger = require('@shared/logger');
 const ReleaseManager = require('@bot/releaseManager');
 const DatabaseManager = require('@shared/database');
+const { createWebhook: createWebhookUtil } = require('@bot/webhookManager');
 
 module.exports = {
     name: Events.ClientReady,
@@ -125,7 +126,7 @@ async function createWebhook(client, channelId) {
             throw new Error('Channel not found or not a text channel');
         }
 
-        const webhook = await channel.createWebhook({
+        const webhook = await createWebhookUtil(channel, {
             name: client.user.username,
             avatar: client.user.avatarURL()
         });

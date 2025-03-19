@@ -331,6 +331,12 @@ class DatabaseManager {
     async close() {
         await this.pool.end();
     }
+
+    async getGuildById(guildId) {
+        const rows = await this.pool.query('SELECT * FROM guilds WHERE id = ?', [guildId]);
+        if (rows.length === 0) return null;
+        return rows[0];
+    }
 }
 
 module.exports = DatabaseManager;

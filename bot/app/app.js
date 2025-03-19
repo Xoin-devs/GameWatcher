@@ -1,3 +1,4 @@
+require('dns').setDefaultResultOrder('ipv4first');
 require('module-alias/register');
 require('@shared/config');
 const client = require('@bot/client');
