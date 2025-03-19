@@ -133,10 +133,16 @@ class MessageUtil {
                     walk(elem.children, builder);
                     builder.addInline('](' + elem.attribs.href + ')');
                     builder.closeBlock();
+                },
+                'basicURL': function (elem, walk, builder, formatOptions) {
+                    builder.addInline('[');
+                    walk(elem.children, builder);
+                    builder.addInline('](' + elem.attribs.href + ')');
                 }
             },
             selectors: [
-                { selector: 'a', format: 'steamLink' },
+                { selector: 'a', format: 'basicURL' },
+                { selector: 'a.bb_link', format: 'steamLink' },
                 { selector: 'img', format: 'skip' },
                 { selector: 'b', format: 'bold' },
                 { selector: 'strong', format: 'bold' },
