@@ -10,17 +10,12 @@ module.exports = {
         .setDMPermission(false),
     async execute(interaction) {
         try {
-            const webUrl = process.env.WEB_URL;
-            const webPort = process.env.WEB_PORT;
-            
-            if (!webUrl) {
-                logger.error('WEB_URL environment variable is not set');
-                await interaction.reply('Sorry, the dashboard URL is not configured properly. Please contact the bot administrator.');
-                return;
-            }
-
             logger.info(`User ${interaction.user.id} requested the dashboard URL`);
-            await interaction.reply(`You can access the bot dashboard at: ${webUrl}:${webPort}`);
+
+            await interaction.reply({
+                content: `✨ **GameWatcher Dashboard** ✨\nConfigure your bot settings here: [Open Dashboard](http://oslo.ovh)\nUse the dashboard game tracking (and more soon!)`,
+                ephemeral: true
+            });
         } catch (error) {
             logger.error(`Error in configure command: ${error.message}`, error);
             await interaction.reply('An error occurred while processing your request. Please try again later.');
