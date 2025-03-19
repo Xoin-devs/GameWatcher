@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const logger = require('@shared/logger');
 const MessageUtil = require('@bot/messageUtil');
 const DatabaseManager = require('@shared/database');
+const { getSteamGameReleaseDate } = require('@bot/utils');
 
 class ReleaseManager {
     constructor() {
@@ -30,17 +31,67 @@ class ReleaseManager {
         
         logger.info('Release manager initialized with daily check');
         
-        // Run a first check immediately on startup
         this.checkReleases();
     }
     
     async checkReleases() {
         try {
-            // Check both today's releases and games releasing in 7 days
+            await this.getMissingReleaseDates();
             await this.checkTodayReleases();
             await this.checkUpcomingReleases();
         } catch (error) {
             logger.error(`Error during release checks: ${error.message}`);
+        }
+    }
+
+    async getMissingReleaseDates() {
+        try {
+            logger.info('Checking for games with missing release dates');
+            const db = await DatabaseManager.getInstance();
+            const gamesWithMissingDates = await db.getGamesWithMissingReleaseDate();
+            
+            if (gamesWithMissingDates.length === 0) {
+                logger.info('No games with missing release dates found');
+                return;
+            }
+            
+            logger.debug(`Found ${gamesWithMissingDates.length} games with missing release dates`);
+            
+            for (const game of gamesWithMissingDates) {
+                let steamAppId = null;
+                
+                if (game.sources && game.sources.length > 0) {
+                    for (const source of game.sources) {
+                        if (source.steam_internal) {
+                            steamAppId = source.steam_internal;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!steamAppId) {
+                    logger.debug(`Game ${game.name} has no Steam AppID, skipping release date lookup`);
+                    continue;
+                }
+                
+                try {
+                    logger.debug(`Fetching release date for ${game.name} (AppID: ${steamAppId})`);
+                    const releaseDate = await getSteamGameReleaseDate(steamAppId);
+                    
+                    if (releaseDate) {
+                        logger.info(`Found release date for ${game.name}: ${releaseDate}`);
+                        const releaseDateFormatted = `${releaseDate.getFullYear()}-${(releaseDate.getMonth() + 1).toString().padStart(2, '0')}-${releaseDate.getDate().toString().padStart(2, '0')}`;
+                        logger.debug(`Updating release date for ${game.name} to ${releaseDateFormatted}`);
+                        await db.updateGameReleaseDate(game.id, releaseDateFormatted);
+                    } else {
+                        logger.debug(`No release date found for ${game.name}`);
+                    }
+                } catch (error) {
+                    logger.error(`Error fetching release date for ${game.name}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            logger.error(`Error getting missing release dates: ${error.message}`);
         }
     }
 
@@ -91,10 +142,7 @@ class ReleaseManager {
         }
     }
 
-    // This method is kept for compatibility with existing code
     addOrUpdateCronJob(game) {
-        // No longer needed to track games in memory
-        // If game is releasing today or in 7 days, handle it now
         if (!game.releaseDate) {
             logger.debug(`Added game ${game.name} has no release date set`);
             return;

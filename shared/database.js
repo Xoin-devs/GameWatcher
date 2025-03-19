@@ -290,6 +290,43 @@ class DatabaseManager {
             releaseDate: game.release_date
         }));
     }
+    
+    async getGamesWithMissingReleaseDate() {
+        const games = await this.pool.query('SELECT id, name FROM games WHERE release_date IS NULL');
+        const result = [];
+        
+        for (const game of games) {
+            const sources = await this.pool.query(
+                'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
+                [game.id]
+            );
+            
+            result.push({
+                id: game.id,
+                name: game.name,
+                sources: sources.map(s => ({
+                    [s.type]: s.source_id,
+                    lastUpdate: s.last_update
+                }))
+            });
+        }
+        
+        return result;
+    }
+
+    async updateGameReleaseDate(gameId, releaseDate) {
+        if (releaseDate && !releaseDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            throw new Error(`Invalid date format: ${releaseDate}. Expected YYYY-MM-DD`);
+        }
+        
+        await this.pool.query(
+            'UPDATE games SET release_date = ? WHERE id = ?',
+            [releaseDate, gameId]
+        );
+        
+        logger.info(`Updated release date to ${releaseDate} for game ID ${gameId}`);
+        return true;
+    }
 
     async close() {
         await this.pool.end();

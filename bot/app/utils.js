@@ -1,5 +1,6 @@
 const CommandsOption = require('@bot/constants/commandsOption');
 const SourceType = require('@bot/constants/sourceType');
+const axios = require('axios');
 
 function normalizeName(name) {
     return name.toLowerCase().replace(/\s+/g, '');
@@ -127,6 +128,32 @@ function buildGameObject(gameName, newDetails, existingGame = {}) {
     return newGame;
 }
 
+async function getSteamGameReleaseDate(appID) {
+    try {
+        const response = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${appID}&cc=us&l=english`);
+        const gameData = response.data[appID]?.data;
+
+        if (gameData && gameData.release_date && gameData.release_date.date) {
+            const releaseDate = gameData.release_date.date;
+
+            // If date is only a year, return null
+            if (releaseDate.length === 4) {
+                return null;
+            }
+
+            const parsedDate = new Date(releaseDate);
+            if (isNaN(parsedDate.getTime()) == false) {
+                return parsedDate;
+            }
+        }
+
+        return null;
+    } catch (error) {
+        logger.error(`Error fetching release date for appID ${appID}:`, error.message);
+        return null;
+    }
+}
+
 module.exports = {
     normalizeName,
     parseDate,
@@ -137,5 +164,6 @@ module.exports = {
     getGameInfos,
     msToTime,
     getGameDetailsFromInteraction,
-    buildGameObject
+    buildGameObject,
+    getSteamGameReleaseDate
 };
