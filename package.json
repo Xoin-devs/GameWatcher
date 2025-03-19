@@ -30,7 +30,7 @@
     "build:all": "npm run build:bot && npm run build:api && npm run build:dashboard",
     "deploy:bot": "npm run build:bot && node scripts/deployToVPS.js --project bot",
     "deploy:api": "npm run build:api && node scripts/deployToVPS.js --project api",
-    "deploy:dashboard": "npm run build:bodashboardt && node scripts/deployToVPS.js --project dashboard"
+    "deploy:dashboard": "npm run build:dashboard && node scripts/deployToVPS.js --project dashboard"
   },
   "dependencies": {
     "chalk": "^4.1.2",
