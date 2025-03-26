@@ -31,7 +31,6 @@ module.exports = {
 
         try {
             await db.removeGame(gameName);
-            ReleaseManager.getInstance().removeCronJob(gameName);
             const message = `Removed game: ${gameName}`;
             logger.info(message);
             await interaction.reply(message);
