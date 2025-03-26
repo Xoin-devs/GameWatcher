@@ -170,7 +170,7 @@ class WebServer {
     }
 
     start() {
-        const port = process.env.WEB_PORT || 3000;
+        const port = process.env.WEB_PORT || 4000;
         this.app.listen(port, () => {
             logger.info(`Web dashboard listening on port ${port}`);
             logger.info(`Open the dashboard at http://localhost:${port}/dashboard`);
