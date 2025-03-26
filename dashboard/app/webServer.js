@@ -112,15 +112,15 @@ class WebServer {
 
     setupRoutes() {
         // Auth routes with explicit scope
-        this.app.get('/auth/discord', 
-            passport.authenticate('discord', { 
+        this.app.get('/auth/discord',
+            passport.authenticate('discord', {
                 scope: ['identify', 'guilds'],
                 prompt: 'consent'
             })
         );
 
-        this.app.get('/auth/callback', 
-            passport.authenticate('discord', { 
+        this.app.get('/auth/callback',
+            passport.authenticate('discord', {
                 failureRedirect: '/',
                 successRedirect: '/dashboard'
             })
@@ -136,7 +136,7 @@ class WebServer {
             if (!req.user) {
                 return res.redirect('/');
             }
-        
+
             try {
                 const response = await fetch(`${res.locals.apiUrl}/api/guilds`);
                 if (!response.ok) {
@@ -150,7 +150,7 @@ class WebServer {
                     }
                     return null;
                 }));
-                res.render('dashboard', { 
+                res.render('dashboard', {
                     user: req.user,
                     guilds: guildDetails.filter(g => g !== null)
                 });
@@ -158,6 +158,14 @@ class WebServer {
                 logger.error('Error fetching guilds:', error.message);
                 res.status(500).send('Internal Server Error');
             }
+        });
+
+        this.app.get('/privacy-policy', (req, res) => {
+            res.render('pages/privacy_policy');
+        });
+
+        this.app.get('/tos', (req, res) => {
+            res.render('pages/terms_of_service');
         });
     }
 
