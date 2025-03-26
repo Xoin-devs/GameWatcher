@@ -7,8 +7,14 @@ const logger = require('@shared/logger');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Enhanced CORS configuration
+const corsOptions = {
+    origin: ['https://oslo.ovh', 'http://localhost:4000', 'http://localhost:81'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+    optionsSuccessStatus: 204
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes

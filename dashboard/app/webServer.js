@@ -7,7 +7,7 @@ const path = require('path');
 const https = require('https');
 const DatabaseManager = require('@shared/database');
 const logger = require('@shared/logger');
-
+const config = require('@shared/config');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 class WebServer {
@@ -38,12 +38,17 @@ class WebServer {
         this.app.use(passport.initialize());
         this.app.use(passport.session());
 
-        const api_port = process.env.API_PORT || 8473;
-        const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
-        const api_url = `${api_endpoint}:${api_port}`;
-
+        // Handle API URL configuration differently for dev vs prod
         this.app.use((req, res, next) => {
-            res.locals.apiUrl = api_url;
+            // In production with Nginx, use relative paths
+            if (config.isProd()) {
+                res.locals.apiBaseUrl = ''; // Empty for relative URLs
+            } else {
+                // In development, use the configured API_ENDPOINT and API_PORT
+                const api_port = process.env.API_PORT || 8080;
+                const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
+                res.locals.apiBaseUrl = `${api_endpoint}:${api_port}`;
+            }
             next();
         });
     }
@@ -138,7 +143,12 @@ class WebServer {
             }
 
             try {
-                const response = await fetch(`${res.locals.apiUrl}/api/guilds`);
+                // Using full URL for API calls from the server-side
+                const api_port = process.env.API_PORT || 8080;
+                const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
+                const apiUrl = `${api_endpoint}:${api_port}`;
+                
+                const response = await fetch(`${apiUrl}/api/guilds`);
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Failed to fetch guilds: ${response.status}`);
