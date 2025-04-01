@@ -1,0 +1,25 @@
+{
+  "name": "gamewatcher_front",
+  "version": "1.0.0",
+  "main": "app/app.js",
+  "scripts": {
+    "start:dev": "cross-env NODE_ENV=dev node .",
+    "start:prod": "cross-env NODE_ENV=prod node ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "connect-sqlite3": "^0.9.15",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "node-fetch": "^3.3.2",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
