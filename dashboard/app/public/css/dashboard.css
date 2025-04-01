@@ -1,0 +1,449 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a;
+    height: 100%;
+    overflow-x: hidden;
+    position: relative;
+}
+
+.navbar {
+    background-color: #171717;
+    color: white;
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.navbar-brand {
+    color: #ffffff;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 20px;
+}
+
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.navbar-user {
+    color: #b0b0b0;
+    font-size: 14px;
+}
+
+.add-bot-button {
+    display: inline-block;
+    background-color: #7289DA; /* Discord color */
+    color: white;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    transition: background-color 0.2s;
+}
+
+.add-bot-button:hover {
+    background-color: #5f73bc;
+}
+
+.main-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.servers-panel {
+    flex: 1;
+    max-width: 300px;
+    background-color: #252525;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    height: auto;
+    border: 1px solid #333;
+}
+
+.games-panel {
+    flex: 3;
+    background-color: #252525;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border: 1px solid #333;
+}
+
+h2 {
+    color: #e0e0e0;
+    margin-top: 0;
+    font-size: 22px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.server-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.server-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px; /* Reduced from 10px */
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-bottom: 3px; /* Reduced from 5px */
+    min-height: 36px; /* Reduced from 44px but still keeping it tap-friendly */
+}
+
+.server-item:hover {
+    background-color: #303030;
+}
+
+.server-item.active {
+    background-color: #2a3a4a;
+    border-left: 3px solid #3498db;
+}
+
+.server-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 10px;
+    object-fit: cover;
+}
+
+.server-name {
+    flex: 1;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.game-card {
+    background-color: #2a2a2a;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #333;
+    height: 110px; /* Reduced from 125px to remove empty space */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    cursor: pointer;
+}
+
+.game-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.game-card:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.game-title {
+    color: #e0e0e0;
+    font-size: 15px; /* Increased from 14px */
+    margin: 0 0 6px 0;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.game-release-date {
+    font-size: 12px; /* Increased from 11px */
+    color: #a0a0a0;
+    margin-bottom: 6px;
+}
+
+.game-sources {
+    font-size: 11px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex-grow: 1;
+}
+
+.source-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    padding: 0px 5px;
+    border-radius: 4px;
+    background-color: #333;
+    border: 1px solid #444;
+    white-space: nowrap;
+    height: 12px;
+    line-height: 1.1;
+    color: #ccc;
+}
+
+.source-chip.steam {
+    border-color: #1B2838;
+    background-color: #171D25; /* Using DARK_BLUE_STEAM from prettyColors.js */
+    color: #c0c0c0;
+}
+
+.source-chip.twitter {
+    border-color: #1DA1F2;
+    background-color: #152836; /* Darker shade of Twitter blue */
+    color: #1DA1F2;
+}
+
+.source-chip.pcgamer {
+    border-color: #c7280c;
+    background-color: #2a1612;
+    color: #c7280c;
+}
+
+.source-chip.pcgamesn {
+    border-color: #5e35b1;
+    background-color: #1e1535;
+    color: #a98bda;
+}
+
+.source-chip.rps {
+    border-color: #2e7d32;
+    background-color: #142a14;
+    color: #4caf50;
+}
+
+.source-chip.vg247 {
+    border-color: #e65100;
+    background-color: #271506;
+    color: #e65100;
+}
+
+.source-chip-icon {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    border-radius: 50%;
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #333;
+    padding-top: 6px;
+    margin-top: auto;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #444;
+    transition: .4s;
+    border-radius: 20px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #3498db;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.subscribe-label {
+    font-size: 14px; /* Increased from 13px */
+    color: #a0a0a0;
+}
+
+.error-message {
+    background-color: #3a2222;
+    border-left: 4px solid #e74c3c;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.loading-spinner {
+    border: 3px solid #333;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.touch-active {
+    background-color: #3a3a3a !important;
+    transition: background-color 0.1s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+        padding: 0;
+        width: 95%;
+        max-width: 95%;
+        margin: 20px auto; /* Center the container */
+    }
+    
+    .servers-panel {
+        max-width: 100%;
+        margin: 0 auto 15px auto; /* Center the panel with auto margins */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .games-panel {
+        width: 100%;
+        margin: 0 auto; /* Center the panel with auto margins */
+        box-sizing: border-box;
+    }
+    
+    .games-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .game-card {
+        height: 120px; /* Slightly taller for mobile to accommodate content */
+    }
+    
+    .navbar-container {
+        flex-direction: column;
+        padding: 10px 20px;
+    }
+    
+    .navbar-brand {
+        margin-bottom: 10px;
+    }
+    
+    .navbar-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .main-container {
+        padding: 0;
+        margin: 10px auto; /* Center the container */
+        width: 95%;
+    }
+    
+    .servers-panel, 
+    .games-panel {
+        padding: 15px;
+    }
+    
+    .games-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .game-card {
+        height: auto;
+        min-height: 100px;
+    }
+    
+    .game-title {
+        font-size: 14px;
+    }
+    
+    .source-chip {
+        font-size: 9px;
+    }
+    
+    h2 {
+        font-size: 18px;
+    }
+    
+    .toggle-switch {
+        width: 36px;
+        height: 18px;
+    }
+    
+    .slider:before {
+        height: 14px;
+        width: 14px;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(18px);
+    }
+    
+    .subscribe-label {
+        font-size: 12px;
+    }
+    
+    .navbar-user {
+        font-size: 12px;
+    }
+    
+    .add-bot-button {
+        font-size: 12px;
+        padding: 5px 10px;
+    }
+}

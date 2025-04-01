@@ -1,22 +1,144 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Game News Forge</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #252525;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #333;
+        }
+
+        h1 {
+            color: #e0e0e0;
+            margin-top: 0;
+            font-size: 28px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        p {
+            margin-bottom: 25px;
+            color: #a0a0a0;
+            font-size: 16px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .login-button, .add-bot-button {
+            display: inline-block;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            text-align: center;
+        }
+
+        .login-button {
+            background-color: #3498db;
+            color: white;
+            padding: 14px 28px;
+            font-size: 16px;
+        }
+
+        .login-button:hover {
+            background-color: #2980b9;
+        }
+
+        .add-bot-button {
+            background-color: #2a2a2a;
+            color: #7289DA;
+            padding: 8px 16px;
+            font-size: 14px;
+            border: 1px solid #7289DA;
+        }
+
+        .add-bot-button:hover {
+            background-color: #303030;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Small logo/icon for the top of the login container */
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        .login-info {
+            background-color: #2a2a2a;
+            border-left: 3px solid #3498db;
+            padding: 12px 15px;
+            text-align: left;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            color: #b0b0b0;
+            font-size: 15px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <h1 class="card-title">Game News Forge</h1>
-                        <p class="card-text">Please log in with your Discord account to continue.</p>
-                        <a href="/auth/discord" class="btn btn-primary">Login with Discord</a>
-                    </div>
-                </div>
-            </div>
+    <div class="container">
+        <img src="/img/game-news-forge-logo-light.png" alt="Game News Forge Logo" class="logo" onerror="this.style.display='none'">
+        <h1>Game News Forge</h1>
+        <p>Track and receive game news and updates directly in your Discord server.</p>
+        
+        <p class="login-info">By logging in with Discord, you'll be able to manage game subscriptions for servers where you have admin privileges and the bot is present. Choose which games you want to receive news about!</p>
+        
+        <div class="button-container">
+            <a href="/auth/discord" class="login-button">Login with Discord</a>
+            <a href="https://discord.com/oauth2/authorize?client_id=1239574548928794655&permissions=2684354560&integration_type=0&scope=bot" class="add-bot-button" target="_blank">Add to your server</a>
+        </div>
+        <div class="footer">
+            <a href="/privacy-policy">Privacy Policy</a> | <a href="/tos">Terms of Service</a>
         </div>
     </div>
 </body>

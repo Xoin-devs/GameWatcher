@@ -22,6 +22,24 @@ class WebServer {
         this.app.set('view engine', 'ejs');
         this.app.set('views', path.join(__dirname, 'views'));
         this.app.use(express.static(path.join(__dirname, 'public')));
+        
+        // Serve images from the img directory with directory browsing disabled
+        this.app.use('/img', express.static(path.join(__dirname, 'img'), {
+            index: false,  // Disable directory index generation
+            setHeaders: (res) => {
+                // Set headers to prevent caching issues if needed
+                res.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+            }
+        }));
+        
+        // Add a middleware to block direct directory access
+        this.app.use('/img', (req, res, next) => {
+            if (req.path === '/' || req.path === '') {
+                return res.status(403).send('Forbidden');
+            }
+            next();
+        });
+        
         this.app.use(express.json());
 
         this.app.use(session({
