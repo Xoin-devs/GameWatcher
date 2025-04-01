@@ -1,5 +1,5 @@
 {
-  "name": "gamewatcher_front",
+  "name": "game-news-forge-dashboard",
   "version": "1.0.0",
   "main": "app/app.js",
   "scripts": {

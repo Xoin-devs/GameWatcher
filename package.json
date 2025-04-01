@@ -1,7 +1,7 @@
 {
-  "name": "game-watcher-monorepo",
+  "name": "game-news-forge-monorepo",
   "version": "1.0.0",
-  "description": "Monorepo for Game Watcher",
+  "description": "Monorepo for Game News Forge project",
   "private": true,
   "workspaces": [
     "bot",

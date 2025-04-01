@@ -7,7 +7,7 @@ const { version } = require('../../../package.json');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName(CommandsName.INFO)
-        .setDescription("Display information about the GameWatcher bot")
+        .setDescription("Display information about the Game News Forge bot")
         .setDMPermission(true),
     async execute(interaction) {
         try {
@@ -20,7 +20,7 @@ module.exports = {
             const uptime = formatUptime(process.uptime());
             
             const embed = new EmbedBuilder()
-                .setTitle('GameWatcher Bot Information')
+                .setTitle('Game News Forge Bot Information')
                 .setColor(0x0099ff)
                 .setDescription('A Discord bot that tracks game releases and provides updates from various sources.')
                 .addFields(
@@ -31,7 +31,7 @@ module.exports = {
                     { name: 'Bot Creator', value: 'Arnauld Alex', inline: true },
                     { name: 'Contact', value: '[LinkedIn Profile](https://www.linkedin.com/in/arnauld-alex/)', inline: true }
                 )
-                .setFooter({ text: 'Thanks for using GameWatcher!' })
+                .setFooter({ text: 'Thanks for using Game News Forge!' })
                 .setTimestamp();
             
             await interaction.reply({ embeds: [embed] });

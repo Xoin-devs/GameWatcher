@@ -13,7 +13,7 @@ module.exports = {
             logger.info(`User ${interaction.user.id} requested the dashboard URL`);
 
             await interaction.reply({
-                content: `✨ **GameWatcher Dashboard** ✨\nConfigure your bot settings here: [Open Dashboard](http://oslo.ovh)\nUse the dashboard game tracking (and more soon!)`,
+                content: `✨ **Game News Forge Dashboard** ✨\nConfigure your bot settings here: [Open Dashboard](http://oslo.ovh)\nUse the dashboard game tracking (and more soon!)`,
                 ephemeral: true
             });
         } catch (error) {

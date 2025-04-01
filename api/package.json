@@ -1,5 +1,5 @@
 {
-  "name": "game-watcher-api",
+  "name": "game-news-forge-api",
   "version": "1.0.0",
   "description": "Backend Express API for Game Watcher",
   "main": "src/server.js",

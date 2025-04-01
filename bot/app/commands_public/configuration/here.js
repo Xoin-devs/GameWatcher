@@ -78,7 +78,7 @@ module.exports = {
                     webhook = await createWebhook(interaction.channel, {
                         name: interaction.client.user.username,
                         avatar: interaction.client.user.avatarURL(),
-                        reason: 'GameWatcher news delivery'
+                        reason: 'Game News Forge news delivery'
                     });
                     logger.info(`New webhook created with ID ${webhook.id}`);
                     
