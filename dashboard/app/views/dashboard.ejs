@@ -38,9 +38,9 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="<%= nonce %>">
         // Pass API base URL from server to client
-        const apiBaseUrl = '<%= apiBaseUrl %>';
+        window.apiBaseUrl = '<%= apiBaseUrl %>';
     </script>
     <script src="/js/dashboard.js"></script>
 </body>

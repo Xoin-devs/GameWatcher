@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Game News Forge</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #e0e0e0;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #252525;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #333;
+        }
+
+        h1 {
+            color: #e0e0e0;
+            margin-top: 0;
+            font-size: 28px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .error-status {
+            font-size: 42px;
+            color: #e74c3c;
+            margin: 20px 0;
+        }
+
+        p {
+            margin-bottom: 25px;
+            color: #a0a0a0;
+            font-size: 16px;
+        }
+
+        .error-details {
+            background-color: #2a2a2a;
+            border-left: 3px solid #e74c3c;
+            padding: 12px 15px;
+            text-align: left;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            font-family: monospace;
+            color: #b0b0b0;
+            font-size: 14px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .home-button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 14px 28px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .home-button:hover {
+            background-color: #2980b9;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #707070;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Something went wrong</h1>
+        <div class="error-status"><%= error.status %></div>
+        <p><%= message %></p>
+        
+        <% if (error.stack && error.stack.length > 0) { %>
+        <div class="error-details">
+            <%= error.stack %>
+        </div>
+        <% } %>
+        
+        <div class="button-container">
+            <a href="/" class="home-button">Back to Home</a>
+        </div>
+        <div class="footer">
+            <a href="/privacy-policy">Privacy Policy</a> | <a href="/tos">Terms of Service</a>
+        </div>
+    </div>
+</body>
+</html>

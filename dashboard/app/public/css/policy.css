@@ -1,75 +1,102 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #333;
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #f7f7f7;
+    color: #e0e0e0;
+    background-color: #1a1a1a;
+    margin: 0;
+    padding: 0;
 }
 
 .container {
-    background-color: white;
+    max-width: 900px;
+    margin: 40px auto;
     padding: 30px;
+    background-color: #252525;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
 }
 
 h1 {
-    color: #2c3e50;
+    color: #e0e0e0;
     margin-top: 0;
-    font-size: 28px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eaeaea;
+    font-size: 32px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+    text-align: center;
+}
+
+.date {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #999;
 }
 
 h2 {
     color: #3498db;
-    font-size: 20px;
-    margin-top: 25px;
-    margin-bottom: 10px;
+    font-size: 22px;
+    margin-top: 30px;
+    margin-bottom: 15px;
 }
 
 p {
     margin-bottom: 15px;
+    color: #ccc;
+    font-size: 16px;
 }
 
-.section {
+ul {
     margin-bottom: 20px;
+    padding-left: 25px;
 }
 
-.date {
-    color: #7f8c8d;
-    font-style: italic;
-    font-size: 14px;
-    margin-bottom: 20px;
+li {
+    margin-bottom: 8px;
+    color: #bbb;
 }
 
 a {
     color: #3498db;
     text-decoration: none;
+    transition: color 0.2s;
 }
 
 a:hover {
+    color: #2980b9;
     text-decoration: underline;
 }
 
+.section {
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #333;
+}
+
+.section:last-of-type {
+    border-bottom: none;
+}
+
 .footer {
-    margin-top: 30px;
+    margin-top: 40px;
     text-align: center;
     font-size: 14px;
-    color: #95a5a6;
+    color: #999;
     padding-top: 20px;
-    border-top: 1px solid #eaeaea;
+    border-top: 1px solid #333;
 }
 
 /* Responsive adjustments */
-@media (max-width: 850px) {
-    body {
-        padding: 15px;
+@media (max-width: 768px) {
+    .container {
+        margin: 20px;
+        padding: 20px;
     }
     
-    .container {
-        padding: 20px;
+    h1 {
+        font-size: 26px;
+    }
+    
+    h2 {
+        font-size: 20px;
     }
 }

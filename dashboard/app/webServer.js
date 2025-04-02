@@ -5,6 +5,8 @@ const passport = require('passport');
 const { Strategy } = require('passport-discord');
 const path = require('path');
 const https = require('https');
+const helmet = require('helmet');
+const crypto = require('crypto');
 const DatabaseManager = require('@shared/database');
 const logger = require('@shared/logger');
 const config = require('@shared/config');
@@ -19,6 +21,30 @@ class WebServer {
     }
 
     setupMiddleware() {
+        // Get API URL for CSP configuration
+        const api_port = process.env.API_PORT || 8080;
+        const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
+        const apiUrl = `${api_endpoint}:${api_port}`;
+
+        // Generate a secure nonce for inline scripts
+        this.app.use((req, res, next) => {
+            res.locals.nonce = crypto.randomBytes(16).toString('base64');
+            next();
+        });
+
+        // Add security headers with helmet
+        this.app.use(helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.nonce}'`],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    imgSrc: ["'self'", "https://cdn.discordapp.com", "data:"],
+                    connectSrc: ["'self'", apiUrl]
+                }
+            }
+        }));
+
         this.app.set('view engine', 'ejs');
         this.app.set('views', path.join(__dirname, 'views'));
         this.app.use(express.static(path.join(__dirname, 'public')));
@@ -27,7 +53,6 @@ class WebServer {
         this.app.use('/img', express.static(path.join(__dirname, 'img'), {
             index: false,  // Disable directory index generation
             setHeaders: (res) => {
-                // Set headers to prevent caching issues if needed
                 res.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
             }
         }));
@@ -41,18 +66,22 @@ class WebServer {
         });
         
         this.app.use(express.json());
+        this.app.use(express.urlencoded({ extended: false }));
 
-        this.app.use(session({
+        const sessionConfig = {
             store: new SQLiteStore(),
             secret: process.env.SESSION_SECRET || 'your-secret-key',
             resave: false,
             saveUninitialized: false,
             cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                maxAge: 604800000 // 7 days
+                secure: process.env.NODE_ENV === 'prod',
+                httpOnly: true,
+                maxAge: 604800000, // 7 days
+                sameSite: 'lax'
             }
-        }));
+        };
 
+        this.app.use(session(sessionConfig));
         this.app.use(passport.initialize());
         this.app.use(passport.session());
 
@@ -63,9 +92,7 @@ class WebServer {
                 res.locals.apiBaseUrl = ''; // Empty for relative URLs
             } else {
                 // In development, use the configured API_ENDPOINT and API_PORT
-                const api_port = process.env.API_PORT || 8080;
-                const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
-                res.locals.apiBaseUrl = `${api_endpoint}:${api_port}`;
+                res.locals.apiBaseUrl = apiUrl;
             }
             next();
         });
@@ -80,10 +107,11 @@ class WebServer {
             state: true
         }, async (accessToken, refreshToken, profile, done) => {
             try {
-                const db = await DatabaseManager.getInstance();
+                await DatabaseManager.getInstance();
                 profile.accessToken = accessToken;
                 return done(null, profile);
             } catch (error) {
+                logger.error('Auth error:', error.message);
                 return done(error, null);
             }
         }));
@@ -117,20 +145,40 @@ class WebServer {
 
                 res.on('end', () => {
                     if (res.statusCode === 200) {
-                        resolve(JSON.parse(data));
+                        try {
+                            const parsedData = JSON.parse(data);
+                            resolve(parsedData);
+                        } catch (e) {
+                            logger.error('Error parsing guild details:', e.message);
+                            reject(new Error('Error parsing guild details'));
+                        }
                     } else {
-                        console.error(`Failed to fetch guild details: ${res.statusCode} - ${data}`);
+                        logger.error(`Failed to fetch guild details: ${res.statusCode} - ${data}`);
                         reject(new Error('Failed to fetch guild details'));
                     }
                 });
             });
 
             req.on('error', (e) => {
+                logger.error('Request error:', e.message);
                 reject(e);
+            });
+
+            req.setTimeout(10000, () => {
+                req.destroy();
+                reject(new Error('Request timeout'));
             });
 
             req.end();
         });
+    }
+
+    // Middleware to check if user is authenticated
+    isAuthenticated(req, res, next) {
+        if (req.isAuthenticated()) {
+            return next();
+        }
+        res.redirect('/');
     }
 
     setupRoutes() {
@@ -149,42 +197,63 @@ class WebServer {
             })
         );
 
+        // Logout route
+        this.app.get('/logout', (req, res) => {
+            req.logout((err) => {
+                if (err) {
+                    logger.error('Error during logout:', err);
+                }
+                res.redirect('/');
+            });
+        });
+
         // Login route
         this.app.get('/', (req, res) => {
             res.render('login');
         });
 
         // Dashboard routes
-        this.app.get('/dashboard', async (req, res) => {
-            if (!req.user) {
-                return res.redirect('/');
-            }
-
+        this.app.get('/dashboard', this.isAuthenticated, async (req, res) => {
             try {
                 // Using full URL for API calls from the server-side
                 const api_port = process.env.API_PORT || 8080;
                 const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
                 const apiUrl = `${api_endpoint}:${api_port}`;
                 
-                const response = await fetch(`${apiUrl}/api/guilds`);
+                const response = await fetch(`${apiUrl}/api/guilds`, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.API_KEY}`
+                    }
+                });
+                
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Failed to fetch guilds: ${response.status}`);
                 }
+                
                 const guilds = await response.json();
                 const guildDetails = await Promise.all(guilds.map(async (guild) => {
                     if (this.userHasGuildAccess(guild, req.user)) {
-                        return await this.fetchGuildDetails(guild.id);
+                        try {
+                            return await this.fetchGuildDetails(guild.id);
+                        } catch (error) {
+                            logger.error(`Error fetching details for guild ${guild.id}:`, error.message);
+                            return null;
+                        }
                     }
                     return null;
                 }));
+                
                 res.render('dashboard', {
                     user: req.user,
                     guilds: guildDetails.filter(g => g !== null)
                 });
             } catch (error) {
                 logger.error('Error fetching guilds:', error.message);
-                res.status(500).send('Internal Server Error');
+                res.status(500).render('error', { 
+                    message: 'Failed to load dashboard', 
+                    error: { status: 500, stack: config.isDev() ? error.stack : '' } 
+                });
             }
         });
 
@@ -194,6 +263,24 @@ class WebServer {
 
         this.app.get('/tos', (req, res) => {
             res.render('pages/terms_of_service');
+        });
+
+        // Error handler for 404 - page not found
+        this.app.use((req, res, next) => {
+            res.status(404).render('error', { 
+                message: 'Page not found', 
+                error: { status: 404, stack: '' } 
+            });
+        });
+
+        // Error handler
+        this.app.use((err, req, res, next) => {
+            const status = err.status || 500;
+            logger.error('Server error:', err);
+            res.status(status).render('error', { 
+                message: err.message, 
+                error: { status, stack: config.isDev() ? err.stack : '' } 
+            });
         });
     }
 
@@ -209,7 +296,7 @@ class WebServer {
         const port = process.env.WEB_PORT || 4000;
         this.app.listen(port, () => {
             logger.info(`Web dashboard listening on port ${port}`);
-            logger.info(`Open the dashboard at http://localhost:${port}/dashboard`);
+            logger.info(`Open the dashboard at http://localhost:${port}`);
         });
     }
 }
