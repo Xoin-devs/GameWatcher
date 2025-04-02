@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     const serverItems = document.querySelectorAll('.server-item');
     const gamesContainer = document.getElementById('gamesContainer');
+    let currentGuildId = null;
+    let currentPage = 1;
+    let currentSearch = '';
+    let currentFilter = '';
     
     // Add both click and keydown (Enter/Space) handlers for accessibility
     serverItems.forEach(item => {
@@ -20,12 +24,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     function selectServer(serverItem) {
-        const guildId = serverItem.getAttribute('data-guild-id');
+        // Always store guildId as string to avoid BigInt issues
+        const guildId = String(serverItem.getAttribute('data-guild-id'));
+        currentGuildId = guildId;
+        
+        // Reset pagination and filters when selecting a new server
+        currentPage = 1;
+        currentSearch = '';
+        currentFilter = '';
         
         serverItems.forEach(g => g.classList.remove('active'));
         serverItem.classList.add('active');
         
-        loadGames(guildId);
+        loadGames();
         
         // On mobile, scroll to games section after selecting a server
         if (window.innerWidth <= 768) {
@@ -99,34 +110,130 @@ document.addEventListener('DOMContentLoaded', function() {
         return chips.join('');
     }
     
-    async function loadGames(guildId) {
+    // Create pagination controls HTML
+    function createPaginationControls(pagination) {
+        if (!pagination || pagination.totalPages <= 1) {
+            return '';
+        }
+        
+        const controls = [];
+        const currentPage = pagination.page;
+        const totalPages = pagination.totalPages;
+        
+        // Previous button
+        controls.push(`
+            <button class="pagination-btn prev-btn" ${currentPage === 1 ? 'disabled' : ''} aria-label="Previous page">
+                &laquo;
+            </button>
+        `);
+        
+        // Page numbers
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, startPage + 4);
+        
+        // Adjust start page if we're near the end
+        if (endPage - startPage < 4) {
+            startPage = Math.max(1, endPage - 4);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            controls.push(`
+                <button class="pagination-btn page-num ${i === currentPage ? 'active' : ''}" data-page="${i}">
+                    ${i}
+                </button>
+            `);
+        }
+        
+        // Next button
+        controls.push(`
+            <button class="pagination-btn next-btn" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Next page">
+                &raquo;
+            </button>
+        `);
+        
+        return `
+            <div class="pagination">
+                <span class="pagination-info">Page ${currentPage} of ${totalPages} (${pagination.total} games)</span>
+                <div class="pagination-controls">
+                    ${controls.join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Create search and filter controls
+    function createSearchAndFilterControls() {
+        return `
+            <div class="games-controls">
+                <div class="search-container">
+                    <input type="text" id="game-search" class="search-input" placeholder="Search games..." 
+                           value="${currentSearch}" aria-label="Search games">
+                    <button id="search-btn" class="search-button" aria-label="Search">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="filter-container">
+                    <select id="filter-select" class="filter-select" aria-label="Filter games">
+                        <option value="" ${currentFilter === '' ? 'selected' : ''}>All games</option>
+                        <option value="subscribed" ${currentFilter === 'subscribed' ? 'selected' : ''}>Subscribed</option>
+                        <option value="unsubscribed" ${currentFilter === 'unsubscribed' ? 'selected' : ''}>Not subscribed</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    }
+    
+    async function loadGames() {
+        if (!currentGuildId) return;
+        
         gamesContainer.innerHTML = '<h2>Loading games...</h2><div class="loading-spinner"></div>';
         
         try {
-            const url = `${apiBaseUrl}/api/games/${guildId}`;
-            console.log(`Loading games for guild ${guildId} from ${url}`);
+            // Build URL with query parameters for pagination, search, and filtering
+            let url = `${apiBaseUrl}/api/games/${currentGuildId}?page=${currentPage}&limit=20`;
+            if (currentSearch) {
+                url += `&search=${encodeURIComponent(currentSearch)}`;
+            }
+            if (currentFilter) {
+                url += `&filter=${encodeURIComponent(currentFilter)}`;
+            }
+            
+            console.log(`Loading games for guild ${currentGuildId} from ${url}`);
             const response = await fetch(url);
             
             if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
             }
             
-            const games = await response.json();
-            console.log(`Received ${games.length} games from API`);
+            const result = await response.json();
+            const games = result.games || [];
+            const pagination = result.pagination || { total: games.length, page: 1, totalPages: 1 };
+            
+            console.log(`Received ${games.length} games from API (page ${pagination.page} of ${pagination.totalPages})`);
 
+            // Always render search and filter controls, even if there are no games
+            let content = `
+                <h2>Games List</h2>
+                ${createSearchAndFilterControls()}
+            `;
+            
             if (games.length === 0) {
-                gamesContainer.innerHTML = `
-                    <h2>Games List</h2>
-                    <p>No games available for this server.</p>
-                `;
+                content += `<p class="no-games-message">No games available for this server${currentSearch ? ` matching "${currentSearch}"` : ''}${currentFilter ? ` (${currentFilter})` : ''}.</p>`;
+                gamesContainer.innerHTML = content;
+                
+                // Even when there are no games, attach search and filter handlers
+                attachSearchHandlers();
+                attachFilterHandlers();
+                
                 return;
             }
 
-            gamesContainer.innerHTML = `
-                <h2>Games List</h2>
+            content += `
                 <div class="games-grid">
                     ${games.map(game => `
-                        <div class="game-card" data-game-id="${game.id}" data-guild-id="${guildId}" data-subscribed="${game.subscribed}" tabindex="0" role="button" aria-pressed="${game.subscribed ? 'true' : 'false'}" aria-label="${game.name}, ${formatDate(game.releaseDate)}, ${game.subscribed ? 'Subscribed' : 'Not subscribed'}">
+                        <div class="game-card" data-game-id="${game.id}" data-guild-id="${currentGuildId}" data-subscribed="${game.subscribed}" tabindex="0" role="button" aria-pressed="${game.subscribed ? 'true' : 'false'}" aria-label="${game.name}, ${formatDate(game.releaseDate)}, ${game.subscribed ? 'Subscribed' : 'Not subscribed'}">
                             <h3 class="game-title">${game.name}</h3>
                             <div class="game-release-date">Release: ${formatDate(game.releaseDate)}</div>
                             <div class="game-sources">
@@ -143,7 +250,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     `).join('')}
                 </div>
+                ${createPaginationControls(pagination)}
             `;
+            
+            gamesContainer.innerHTML = content;
             
             // Add click handlers to game cards
             document.querySelectorAll('.game-card').forEach(card => {
@@ -182,6 +292,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
             
+            // Add pagination event handlers
+            document.querySelectorAll('.pagination-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.disabled) return;
+                    
+                    if (this.classList.contains('prev-btn')) {
+                        currentPage = Math.max(1, currentPage - 1);
+                    } else if (this.classList.contains('next-btn')) {
+                        currentPage = Math.min(pagination.totalPages, currentPage + 1);
+                    } else {
+                        currentPage = parseInt(this.getAttribute('data-page'), 10);
+                    }
+                    
+                    loadGames();
+                    // Scroll to top of games panel
+                    gamesContainer.scrollIntoView({ behavior: 'smooth' });
+                });
+            });
+            
+            // Add search handlers
+            attachSearchHandlers();
+            
+            // Add filter change handler
+            attachFilterHandlers();
+            
             // Add touch feedback for mobile
             addTouchFeedback();
         } catch (error) {
@@ -192,7 +327,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p>${error.message}</p>
                     <p>Please try again later or contact support.</p>
                 </div>
+                ${createSearchAndFilterControls()}
             `;
+            
+            // Even on error, attach event handlers to search and filter controls
+            attachSearchHandlers();
+            attachFilterHandlers();
         }
     }
     
@@ -230,9 +370,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function addTouchFeedback() {
         const cards = document.querySelectorAll('.game-card');
         const servers = document.querySelectorAll('.server-item');
+        const buttons = document.querySelectorAll('.pagination-btn, .search-button');
         
-        // Combine both types of elements
-        const elements = [...cards, ...servers];
+        // Combine all types of elements
+        const elements = [...cards, ...servers, ...buttons];
         
         elements.forEach(el => {
             // Touch start - add active class
@@ -248,43 +389,96 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-});
-
-async function toggleSubscription(guildId, gameId, subscribe) {
-    try {
-        console.log(`${subscribe ? 'Subscribing to' : 'Unsubscribing from'} game ${gameId} for guild ${guildId}`);
-        const method = subscribe ? 'POST' : 'DELETE';
-        // Using apiBaseUrl for proper environment handling
-        const url = `${apiBaseUrl}/api/guilds/${guildId}/games/${gameId}`;
-        const response = await fetch(url, { 
-            method,
-            credentials: 'include'
-        });
+    
+    // Extract search event handlers to a separate function
+    function attachSearchHandlers() {
+        const searchInput = document.getElementById('game-search');
+        const searchBtn = document.getElementById('search-btn');
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error toggling subscription:', errorText);
-            alert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} game. Error: ${response.status}`);
+        if (searchInput && searchBtn) {
+            // Search button click
+            searchBtn.addEventListener('click', function() {
+                const searchValue = searchInput.value.trim();
+                if (currentSearch !== searchValue) {
+                    currentSearch = searchValue;
+                    currentPage = 1; // Reset to first page on new search
+                    loadGames();
+                }
+            });
             
-            // Revert UI changes on error
-            const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
-            if (card) {
-                const previousState = !subscribe;
-                card.setAttribute('data-subscribed', previousState);
+            // Enter key in search input
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    const searchValue = this.value.trim();
+                    if (currentSearch !== searchValue) {
+                        currentSearch = searchValue;
+                        currentPage = 1; // Reset to first page on new search
+                        loadGames();
+                    }
+                }
+            });
+        }
+    }
+    
+    // Extract filter event handlers to a separate function
+    function attachFilterHandlers() {
+        const filterSelect = document.getElementById('filter-select');
+        if (filterSelect) {
+            // Ensure the filter select has the current value
+            filterSelect.value = currentFilter;
+            
+            filterSelect.addEventListener('change', function() {
+                const filterValue = this.value;
+                if (currentFilter !== filterValue) {
+                    currentFilter = filterValue;
+                    currentPage = 1; // Reset to first page on new filter
+                    loadGames();
+                }
+            });
+        }
+    }
+    
+    // Global toggle subscription function
+    window.toggleSubscription = async function(guildId, gameId, subscribe) {
+        try {
+            // Ensure guildId is treated as string to avoid BigInt issues
+            guildId = String(guildId);
+            gameId = String(gameId);
+            
+            console.log(`${subscribe ? 'Subscribing to' : 'Unsubscribing from'} game ${gameId} for guild ${guildId}`);
+            const method = subscribe ? 'POST' : 'DELETE';
+            // Using apiBaseUrl for proper environment handling
+            const url = `${apiBaseUrl}/api/guilds/${guildId}/games/${gameId}`;
+            const response = await fetch(url, { 
+                method,
+                credentials: 'include'
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error toggling subscription:', errorText);
+                alert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} game. Error: ${response.status}`);
                 
-                const checkbox = card.querySelector(`#game-${gameId}`);
-                if (checkbox) checkbox.checked = previousState;
+                // Revert UI changes on error
+                const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
+                if (card) {
+                    const previousState = !subscribe;
+                    card.setAttribute('data-subscribed', previousState);
+                    
+                    const checkbox = card.querySelector(`#game-${gameId}`);
+                    if (checkbox) checkbox.checked = previousState;
+                    
+                    const label = card.querySelector('.subscribe-label');
+                    if (label) label.textContent = previousState ? 'Subscribed' : 'Subscribe';
+                }
                 
-                const label = card.querySelector('.subscribe-label');
-                if (label) label.textContent = previousState ? 'Subscribed' : 'Subscribe';
+                return;
             }
             
-            return;
+            console.log('Subscription updated successfully');
+        } catch (error) {
+            console.error('Error toggling subscription:', error);
+            alert(`An error occurred while ${subscribe ? 'subscribing to' : 'unsubscribing from'} the game.`);
         }
-        
-        console.log('Subscription updated successfully');
-    } catch (error) {
-        console.error('Error toggling subscription:', error);
-        alert(`An error occurred while ${subscribe ? 'subscribing to' : 'unsubscribing from'} the game.`);
-    }
-}
+    };
+});

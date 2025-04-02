@@ -20,7 +20,17 @@ class DatabaseManager {
             password: process.env.DB_PASSWORD || '',
             database: process.env.DB_NAME || 'mydatabase',
             waitForConnections: true,
-            connectTimeout: 30000
+            connectTimeout: 30000,
+            // Add BigInt support configuration
+            supportBigNumbers: true,
+            bigNumberStrings: true,
+            // Ensure all numeric values are returned as strings to avoid BigInt issues
+            typeCast: function (field, next) {
+                if (field.type === 'BIGINT') {
+                    return field.string();
+                }
+                return next();
+            }
         });
 
         logger.debug(`Connecting to database: ${process.env.DB_NAME || 'mydatabase'}`);
@@ -29,6 +39,7 @@ class DatabaseManager {
     }
 
     async createTables() {
+        // Modify guild_id to explicitly use VARCHAR(255) to handle Discord snowflakes as strings
         await this.pool.query(`
             CREATE TABLE IF NOT EXISTS guilds (
                 id VARCHAR(255) PRIMARY KEY,
@@ -65,6 +76,8 @@ class DatabaseManager {
     }
 
     async addGuild(guildId, channelId, webhookUrl) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         await this.pool.query(
             'INSERT INTO guilds (id, channel_id, webhook_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), webhook_url = VALUES(webhook_url)',
             [guildId, channelId, webhookUrl]
@@ -72,18 +85,24 @@ class DatabaseManager {
     }
 
     async removeGuildGames(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         logger.debug(`Removing guild games associations for guild ID ${guildId}`);
         await this.pool.query('DELETE FROM guild_games WHERE guild_id = ?', [guildId]);
         logger.debug(`Successfully removed guild games for guild ID ${guildId}`);
     }
 
     async removeGuild(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         logger.debug(`Removing guild ID ${guildId} from database`);
         await this.pool.query('DELETE FROM guilds WHERE id = ?', [guildId]);
         logger.info(`Successfully removed guild ID ${guildId}`);
     }
     
     async cleanupGuild(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         logger.debug(`Starting full cleanup for guild ID ${guildId}`);
         await this.removeGuildGames(guildId);
         await this.removeGuild(guildId);
@@ -202,6 +221,58 @@ class DatabaseManager {
         return result;
     }
 
+    async getPaginatedGames(page = 1, limit = 20, search = '', filter = '') {
+        const offset = (page - 1) * limit;
+        let query = 'SELECT * FROM games';
+        let countQuery = 'SELECT COUNT(*) as total FROM games';
+        const params = [];
+        
+        // Add search condition if provided
+        if (search) {
+            query += ' WHERE name LIKE ?';
+            countQuery += ' WHERE name LIKE ?';
+            params.push(`%${search}%`);
+        }
+        
+        // Add pagination
+        query += ' ORDER BY name LIMIT ? OFFSET ?';
+        params.push(parseInt(limit, 10), parseInt(offset, 10));
+        
+        // Get total count for pagination
+        const countResult = await this.pool.query(countQuery, search ? [`%${search}%`] : []);
+        const totalGames = countResult[0].total;
+        
+        // Get paginated games
+        const games = await this.pool.query(query, params);
+        const result = [];
+        
+        for (const game of games) {
+            const sources = await this.pool.query(
+                'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
+                [game.id]
+            );
+            result.push({
+                id: game.id,
+                name: game.name,
+                sources: sources.map(s => ({
+                    [s.type]: s.source_id,
+                    lastUpdate: s.last_update
+                })),
+                ...(game.release_date && { releaseDate: game.release_date })
+            });
+        }
+        
+        return {
+            games: result,
+            pagination: {
+                total: totalGames,
+                page: parseInt(page, 10),
+                limit: parseInt(limit, 10),
+                totalPages: Math.ceil(totalGames / limit)
+            }
+        };
+    }
+
     async getGame(name) {
         const rows = await this.pool.query('SELECT * FROM games WHERE name = ?', [name]);
         if (rows.length === 0) return null;
@@ -221,6 +292,8 @@ class DatabaseManager {
     }
 
     async linkGameToGuild(guildId, gameId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         await this.pool.query(
             'INSERT INTO guild_games (guild_id, game_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE guild_id = guild_id',
             [guildId, gameId]
@@ -228,6 +301,8 @@ class DatabaseManager {
     }
 
     async unlinkGameFromGuild(guildId, gameId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         await this.pool.query(
             'DELETE FROM guild_games WHERE guild_id = ? AND game_id = ?',
             [guildId, gameId]
@@ -235,6 +310,8 @@ class DatabaseManager {
     }
 
     async getGuildGames(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         const games = await this.pool.query(`
             SELECT g.id, g.name, g.release_date
             FROM games g
@@ -244,7 +321,96 @@ class DatabaseManager {
         return games;
     }
 
+    async getPaginatedGuildGames(guildId, page = 1, limit = 20, search = '', filterSubscribed = '') {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
+        console.log(`getPaginatedGuildGames called with guildId: ${guildId} (type: ${typeof guildId})`);
+        
+        const offset = (page - 1) * limit;
+        let baseQuery = `
+            SELECT g.id, g.name, g.release_date, 
+                   CASE WHEN gg.guild_id IS NOT NULL THEN 1 ELSE 0 END as subscribed
+            FROM games g
+            LEFT JOIN guild_games gg ON g.id = gg.game_id AND gg.guild_id = ?
+        `;
+        
+        let countQuery = `
+            SELECT COUNT(*) as total
+            FROM games g
+            LEFT JOIN guild_games gg ON g.id = gg.game_id AND gg.guild_id = ?
+        `;
+        
+        let params = [guildId];
+        console.log(`SQL params: ${JSON.stringify(params)}`);
+        
+        // Add search condition if provided
+        if (search) {
+            baseQuery += ' WHERE g.name LIKE ?';
+            countQuery += ' WHERE g.name LIKE ?';
+            params.push(`%${search}%`);
+        }
+        
+        // Add subscription filter if provided
+        if (filterSubscribed === 'subscribed' || filterSubscribed === 'unsubscribed') {
+            const whereClause = search ? ' AND' : ' WHERE';
+            const isSubscribed = filterSubscribed === 'subscribed' ? 'IS NOT NULL' : 'IS NULL';
+            baseQuery += `${whereClause} gg.guild_id ${isSubscribed}`;
+            countQuery += `${whereClause} gg.guild_id ${isSubscribed}`;
+        }
+        
+        // Add pagination
+        baseQuery += ' ORDER BY g.name LIMIT ? OFFSET ?';
+        params.push(parseInt(limit, 10), parseInt(offset, 10));
+        
+        try {
+            // Get total count for pagination
+            const countParams = [guildId];
+            if (search) countParams.push(`%${search}%`);
+            console.log(`Count SQL params: ${JSON.stringify(countParams)}`);
+            const countResult = await this.pool.query(countQuery, countParams);
+            const totalGames = countResult[0].total;
+            
+            // Get paginated games
+            console.log(`Final SQL params: ${JSON.stringify(params)}`);
+            const games = await this.pool.query(baseQuery, params);
+            const result = [];
+            
+            for (const game of games) {
+                const sources = await this.pool.query(
+                    'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
+                    [game.id]
+                );
+                
+                result.push({
+                    id: game.id,
+                    name: game.name,
+                    sources: sources.map(s => ({
+                        [s.type]: s.source_id,
+                        lastUpdate: s.last_update
+                    })),
+                    subscribed: game.subscribed === 1,
+                    ...(game.release_date && { releaseDate: game.release_date })
+                });
+            }
+            
+            return {
+                games: result,
+                pagination: {
+                    total: totalGames,
+                    page: parseInt(page, 10),
+                    limit: parseInt(limit, 10),
+                    totalPages: Math.ceil(totalGames / limit)
+                }
+            };
+        } catch (error) {
+            console.error(`Error in getPaginatedGuildGames for guildId ${guildId}:`, error.message);
+            throw error;
+        }
+    }
+
     async getGuildGame(guildId, gameName) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         const rows = await this.pool.query(`
             SELECT g.id, g.name, g.release_date
             FROM games g
@@ -256,6 +422,8 @@ class DatabaseManager {
     }
 
     async updateGuildWebhook(guildId, webhookUrl) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         logger.debug(`Updating webhook URL for guild ID ${guildId}`);
         try {
             const result = await this.pool.query(
@@ -277,6 +445,8 @@ class DatabaseManager {
     }
 
     async getGuildWebhook(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         const rows = await this.pool.query('SELECT webhook_url FROM guilds WHERE id = ?', [guildId]);
         if (rows.length === 0) return null;
         return rows[0].webhook_url;
@@ -333,6 +503,8 @@ class DatabaseManager {
     }
 
     async getGuildById(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
         const rows = await this.pool.query('SELECT * FROM guilds WHERE id = ?', [guildId]);
         if (rows.length === 0) return null;
         return rows[0];

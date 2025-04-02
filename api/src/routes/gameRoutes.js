@@ -1,24 +1,24 @@
 const express = require('express');
-const gameController = require('@api/controllers/gameController');
+const gameController = require('../controllers/gameController');
 
 const router = express.Router();
 
-// Move specific routes before parameterized routes
-router.get('/guilds', gameController.getGuilds);
+// Games routes
+router.get('/games', gameController.getAllGames);
 router.get('/games/:guildId', gameController.getGamesWithSubscriptionStatus);
+router.get('/game/:name', gameController.getGame);
+router.post('/game', gameController.addGame);
+router.put('/game/:name', gameController.updateGame);
+router.delete('/game/:name', gameController.deleteGame);
+router.post('/game/:name/guild', gameController.linkGameToGuild);
+router.delete('/game/:name/guild', gameController.unlinkGameFromGuild);
+router.put('/game/:name/source', gameController.updateSourceLastUpdate);
+
+// Guild routes
+router.get('/guilds', gameController.getGuilds);
+
+// Direct relationships using IDs
 router.post('/guilds/:guildId/games/:gameId', gameController.linkGameToGuildById);
 router.delete('/guilds/:guildId/games/:gameId', gameController.unlinkGameFromGuildById);
-router.get('/', gameController.getAllGames);
-
-// Parameterized routes after specific routes
-router.get('/:name', gameController.getGame);
-router.put('/:name', gameController.updateGame);
-router.delete('/:name', gameController.deleteGame);
-router.post('/:name/link', gameController.linkGameToGuild);
-router.post('/:name/unlink', gameController.unlinkGameFromGuild);
-router.put('/:name/source', gameController.updateSourceLastUpdate);
-
-// Add post route to the bottom
-router.post('/', gameController.addGame);
 
 module.exports = router;

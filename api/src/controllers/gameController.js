@@ -118,15 +118,16 @@ async function getGuilds(req, res, next) {
 async function getGamesWithSubscriptionStatus(req, res, next) {
     try {
         const db = await DatabaseManager.getInstance();
-        const guildId = req.params.guildId;
-        const allGames = await db.getGames();
-        const guildGames = await db.getGuildGames(guildId);
-        const guildGameIds = new Set(guildGames.map(g => g.id));
+        // Ensure guildId is treated as string to avoid BigInt issues
+        const guildId = String(req.params.guildId);
         
-        const result = allGames.map(game => ({
-            ...game,
-            subscribed: guildGameIds.has(game.id)
-        }));
+        // Extract query parameters for pagination, search, and filtering
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 20;
+        const search = req.query.search || '';
+        const filter = req.query.filter || '';
+        
+        const result = await db.getPaginatedGuildGames(guildId, page, limit, search, filter);
         
         res.json(result);
     } catch (error) {
@@ -136,7 +137,9 @@ async function getGamesWithSubscriptionStatus(req, res, next) {
 
 async function linkGameToGuildById(req, res, next) {
     try {
-        const { guildId, gameId } = req.params;
+        // Ensure guildId is treated as string to avoid BigInt issues
+        const guildId = String(req.params.guildId);
+        const gameId = req.params.gameId;
         const db = await DatabaseManager.getInstance();
         await db.linkGameToGuild(guildId, gameId);
         res.json({ success: true });
@@ -147,7 +150,9 @@ async function linkGameToGuildById(req, res, next) {
 
 async function unlinkGameFromGuildById(req, res, next) {
     try {
-        const { guildId, gameId } = req.params;
+        // Ensure guildId is treated as string to avoid BigInt issues
+        const guildId = String(req.params.guildId);
+        const gameId = req.params.gameId;
         const db = await DatabaseManager.getInstance();
         await db.unlinkGameFromGuild(guildId, gameId);
         res.json({ success: true });
