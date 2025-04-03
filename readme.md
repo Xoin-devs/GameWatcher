@@ -174,48 +174,192 @@ pm2 start ecosystem.config.js --env production
 ### Project Structure
 
 ```
-.
+i:\_workspace_fourtou\Discord\GameWatcher\
 ├── .env.dev
 ├── .env.prod
 ├── .gitignore
 ├── package.json
+├── package-lock.json
+├── readme.md
+├── todo.md
 ├── api/
+│   ├── ecosystem.config.js
+│   ├── package.json
+│   └── src/
+│       ├── app.js
+│       ├── server.js
+│       ├── controllers/
+│       │   └── gameController.js
+│       └── routes/
+│           └── gameRoutes.js
 ├── bot/
+│   ├── ecosystem.config.js
+│   ├── package.json
+│   ├── publish.bat
 │   ├── app/
-│   │   ├── commands/
-│   │   ├── constants/
-│   │   ├── events/
-│   │   ├── watchers/
-│   │   ├── wrappers/
 │   │   ├── app.js
 │   │   ├── client.js
 │   │   ├── commandDeployer.js
 │   │   ├── commandHandler.js
 │   │   ├── commandHelper.js
-│   │   ├── config.js
-│   │   ├── database.js
-│   │   ├── logger.js
 │   │   ├── messageUtil.js
 │   │   ├── releaseManager.js
-│   │   └── utils.js
-│   ├── ecosystem.config.js
-│   ├── package.json
-│   └── readme.md
+│   │   ├── utils.js
+│   │   ├── webhookManager.js
+│   │   ├── commands_private/
+│   │   │   ├── configuration/
+│   │   │   └── utility/
+│   │   ├── commands_public/
+│   │   │   └── configuration/
+│   │   ├── constants/
+│   │   │   ├── commandsName.js
+│   │   │   ├── commandsOption.js
+│   │   │   ├── discordConstants.js
+│   │   │   ├── sourceType.js
+│   │   │   └── steamFeedType.js
+│   │   ├── events/
+│   │   │   ├── guildDelete.js
+│   │   │   ├── interactionCreate.js
+│   │   │   └── ready.js
+│   │   ├── utils/
+│   │   └── watchers/
+│   │       ├── steamExternalWatcher.js
+│   │       ├── steamInternalWatcher.js
+│   │       ├── twitterWatcher.js
+│   │       ├── watcher.js
+│   │       ├── watcherManager.js
+│   │       └── wrappers/
+│   │           ├── steamExternalWrapper.js
+│   │           ├── steamInternalWrapper.js
+│   │           └── twitterWrapper.js
+│   ├── assets/
+│   │   ├── icon_pc_gamer.png
+│   │   ├── icon_pcgamesn.png
+│   │   ├── icon_rps.png
+│   │   ├── icon_steam.png
+│   │   ├── icon_twitter.png
+│   │   └── icon_VG247.png
+│   └── storage/
+│       └── 5d9a17cb70b9733aadc073a44c21889d33325874c51f9c0c461de3e61a2425eb
 ├── dashboard/
-│   ├── app/
-│   │   ├── public/
-│   │   ├── views/
-│   │   ├── app.js
-│   │   ├── webServer.js
+│   ├── ecosystem.config.js
+│   ├── hexagonal-api.md
+│   ├── hexagonal.md
 │   ├── package.json
-│   └── readme.md
-├── shared/
-│   ├── config.js
-│   ├── database.js
-│   ├── logger.js
-│   ├── prettyColors.js
-│   └── timeConstants.js
-└── README.md
+│   ├── sessions/
+│   └── app/
+│       ├── app.js
+│       ├── webServer.js
+│       ├── adapters/
+│       │   ├── in/
+│       │   │   └── web/
+│       │   │       ├── AuthController.js
+│       │   │       ├── GameController.js
+│       │   │       ├── GuildController.js
+│       │   │       ├── ErrorMiddleware.js
+│       │   │       ├── Router.js
+│       │   │       └── viewmodels/
+│       │   │           ├── DashboardViewModel.js
+│       │   │           └── GameViewModel.js
+│       │   └── out/
+│       │       ├── discord/
+│       │       │   └── DiscordRepositoryImpl.js
+│       │       └── persistence/
+│       │           ├── GameRepositoryImpl.js
+│       │           └── GuildMapper.js
+│       ├── config/
+│       │   ├── AuthConfig.js
+│       │   └── SecurityConfig.js
+│       ├── core/
+│       │   ├── application/
+│       │   │   ├── errors/
+│       │   │   │   └── ApplicationErrors.js
+│       │   │   ├── factories/
+│       │   │   │   ├── ControllerFactory.js
+│       │   │   │   └── ServiceFactory.js
+│       │   │   └── services/
+│       │   │       ├── GameService.js
+│       │   │       ├── GuildService.js
+│       │   │       └── UserService.js
+│       │   └── domain/
+│       │       ├── entities/
+│       │       │   ├── Guild.js
+│       │       │   ├── Pagination.js
+│       │       │   └── Source.js
+│       │       └── ports/
+│       │           ├── in/
+│       │           │   ├── GamePort.js
+│       │           │   ├── GuildPort.js
+│       │           │   └── UserPort.js
+│       │           └── out/
+│       │               ├── DiscordRepository.js
+│       │               └── GameRepository.js
+│       ├── img/
+│       │   ├── game-news-forge-logo-favicon.png
+│       │   └── game-news-forge-logo-light.png
+│       ├── infrastructure/
+│       │   ├── AppInitializer.js
+│       │   └── WebServer.js
+│       ├── public/
+│       │   ├── css/
+│       │   │   └── dashboard.css
+│       │   └── js/
+│       │       ├── adapters/
+│       │       │   └── apiClient.js
+│       │       ├── application/
+│       │       │   └── gameService.js
+│       │       ├── dashboard.js
+│       │       ├── presentation/
+│       │       │   ├── gameList.js
+│       │       │   └── serverList.js
+│       │       └── utils/
+│       │           └── formatters.js
+│       └── views/
+│           ├── dashboard.ejs
+│           ├── error.ejs
+│           ├── login.ejs
+│           └── pages/
+│               ├── privacy_policy.ejs
+│               └── terms_of_service.ejs
+├── deploy/
+│   ├── api/
+│   │   ├── ecosystem.config.js
+│   │   ├── package.json
+│   │   ├── shared/
+│   │   │   ├── config.js
+│   │   │   ├── database.js
+│   │   │   ├── logger.js
+│   │   │   ├── prettyColors.js
+│   │   │   └── timeConstants.js
+│   │   └── src/
+│   │       ├── app.js
+│   │       ├── server.js
+│   │       ├── controllers/
+│   │       └── routes/
+│   ├── bot/
+│   │   ├── ecosystem.config.js
+│   │   ├── package.json
+│   │   ├── publish.bat
+│   │   ├── readme.md
+│   │   ├── app/
+│   │   ├── assets/
+│   │   ├── shared/
+│   │   └── storage/
+│   └── dashboard/
+│       ├── ecosystem.config.js
+│       ├── package.json
+│       ├── sessions/
+│       ├── app/
+│       └── shared/
+├── scripts/
+│   ├── deploy.js
+│   └── deployToVPS.js
+└── shared/
+    ├── config.js
+    ├── database.js
+    ├── logger.js
+    ├── prettyColors.js
+    └── timeConstants.js
 ```
 
 ### Contributing
