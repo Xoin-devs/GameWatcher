@@ -1,456 +1,218 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Key DOM elements and state
-    const serverItems = document.querySelectorAll('.server-item');
-    const gamesContainer = document.getElementById('gamesContainer');
-    let currentGuildId = null;
-    let currentPage = 1;
-    let currentSearch = '';
-    let currentFilter = '';
-    
-    // Get apiBaseUrl from page context or default to empty string
-    // This fixes the "apiBaseUrl is not defined" error
-    const apiBaseUrl = window.apiBaseUrl || '';
-    
-    // Initialize event listeners
-    initEventListeners();
-    
-    /**
-     * Initialize all event listeners
-     */
-    function initEventListeners() {
-        // Add both click and keydown (Enter/Space) handlers for accessibility
-        serverItems.forEach(item => {
-            // Click handler
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                selectServer(this);
-            });
-            
-            // Keyboard handler for accessibility
-            item.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    selectServer(this);
-                }
-            });
-        });
-    }
-    
-    /**
-     * Select a server and load its games
-     * @param {HTMLElement} serverItem - The server list item element
-     */
-    function selectServer(serverItem) {
-        // Always store guildId as string to avoid BigInt issues
-        const guildId = String(serverItem.getAttribute('data-guild-id'));
-        currentGuildId = guildId;
-        
-        // Reset pagination and filters when selecting a new server
-        currentPage = 1;
-        currentSearch = '';
-        currentFilter = '';
-        
-        serverItems.forEach(g => g.classList.remove('active'));
-        serverItem.classList.add('active');
-        
-        loadGames();
-        
-        // On mobile, scroll to games section after selecting a server
-        if (window.innerWidth <= 768) {
-            const gamesPanel = document.querySelector('.games-panel');
-            if (gamesPanel) {
-                gamesPanel.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    }
-    
-    /**
-     * Format date to a more readable format
-     * @param {string} dateString - ISO date string or null
-     * @returns {string} Formatted date string
-     */
-    function formatDate(dateString) {
-        if (!dateString) return 'To be announced';
-        
-        try {
-            const date = new Date(dateString);
-            // Check if date is valid
-            if (isNaN(date.getTime())) return 'To be announced';
-            
-            // Format: Month Day, Year
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            return date.toLocaleDateString('en-US', options);
-        } catch (error) {
-            return 'To be announced';
-        }
-    }
-    
-    /**
-     * Get appropriate class and label for source type
-     * @param {string} sourceKey - The source key from the API
-     * @returns {Object} Object containing class and label
-     */
-    function getSourceInfo(sourceKey) {
-        // Normalize steam sources to just "steam"
-        if (sourceKey.toLowerCase().includes('steam')) {
-            return { class: 'steam', label: 'Steam' };
-        }
-        
-        const sourcesMap = {
-            'twitter': { class: 'twitter', label: 'Twitter' },
-            'pcgamer': { class: 'pcgamer', label: 'PC Gamer' },
-            'pcgamesn': { class: 'pcgamesn', label: 'PCGamesN' },
-            'rps': { class: 'rps', label: 'RPS' },
-            'vg247': { class: 'vg247', label: 'VG247' }
+import gameService from './application/gameService.js';
+import GameList from './presentation/gameList.js';
+import ServerList from './presentation/serverList.js';
+
+/**
+ * DashboardController coordinates the dashboard functionality
+ * It connects UI components with the application services
+ */
+class DashboardController {
+    constructor() {
+        // State
+        this.currentGuildId = null;
+        this.filters = {
+            page: 1,
+            search: '',
+            filter: ''
         };
+        this.guildStats = { totalGames: 0, subscribedGames: 0 };
         
-        return sourcesMap[sourceKey.toLowerCase()] || { class: '', label: sourceKey };
+        // Components
+        this.gamesContainer = document.getElementById('gamesContainer');
+        this.serverItems = document.querySelectorAll('.server-item');
+        
+        // Initialize UI components
+        this.initComponents();
     }
     
     /**
-     * Create source chips HTML with deduplication
-     * @param {Array} sources - Array of source objects
-     * @returns {string} HTML for source chips
+     * Initialize UI components
      */
-    function createSourceChips(sources) {
-        if (!sources || sources.length === 0) {
-            return '<span>No sources</span>';
-        }
+    initComponents() {
+        // Initialize server list
+        this.serverList = new ServerList(
+            this.serverItems, 
+            this.handleServerSelect.bind(this)
+        );
+        this.serverList.addTouchFeedback();
         
-        // Track which source types we've already added
-        const addedSources = new Set();
-        const chips = [];
-        
-        sources.forEach(sourceObj => {
-            const sourceKey = Object.keys(sourceObj)[0];
-            const sourceInfo = getSourceInfo(sourceKey);
-            
-            // Create a key for deduplication (use the label for display consistency)
-            const dedupeKey = sourceInfo.label.toLowerCase();
-            
-            // Only add this source if we haven't added it already
-            if (!addedSources.has(dedupeKey)) {
-                addedSources.add(dedupeKey);
-                chips.push(`<span class="source-chip ${sourceInfo.class}">${sourceInfo.label}</span>`);
-            }
-        });
-        
-        return chips.join('');
+        // Initialize game list
+        this.gameList = new GameList(
+            this.gamesContainer
+        );
     }
     
     /**
-     * Create pagination controls HTML
-     * @param {Object} pagination - Pagination object from API
-     * @returns {string} HTML for pagination controls
+     * Handle server selection
+     * @param {string} guildId - Selected guild ID
      */
-    function createPaginationControls(pagination) {
-        if (!pagination || pagination.totalPages <= 1) {
-            return '';
-        }
+    async handleServerSelect(guildId) {
+        // Update state
+        this.currentGuildId = guildId;
+        this.resetFilters();
         
-        const controls = [];
-        const currentPage = pagination.page;
-        const totalPages = pagination.totalPages;
-        
-        // Previous button
-        controls.push(`
-            <button class="pagination-btn prev-btn" ${currentPage === 1 ? 'disabled' : ''} aria-label="Previous page">
-                &laquo;
-            </button>
-        `);
-        
-        // Page numbers
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        
-        // Adjust start page if we're near the end
-        if (endPage - startPage < 4) {
-            startPage = Math.max(1, endPage - 4);
-        }
-        
-        for (let i = startPage; i <= endPage; i++) {
-            controls.push(`
-                <button class="pagination-btn page-num ${i === currentPage ? 'active' : ''}" data-page="${i}">
-                    ${i}
-                </button>
-            `);
-        }
-        
-        // Next button
-        controls.push(`
-            <button class="pagination-btn next-btn" ${currentPage === totalPages ? 'disabled' : ''} aria-label="Next page">
-                &raquo;
-            </button>
-        `);
-        
-        return `
-            <div class="pagination">
-                <span class="pagination-info">Page ${currentPage} of ${totalPages} (${pagination.total} games)</span>
-                <div class="pagination-controls">
-                    ${controls.join('')}
-                </div>
-            </div>
-        `;
+        // Load data
+        await this.loadGuildStats();
+        await this.loadGames();
     }
     
     /**
-     * Create search and filter controls
-     * @returns {string} HTML for search and filter controls
+     * Reset filters to default state
      */
-    function createSearchAndFilterControls() {
-        return `
-            <div class="games-controls">
-                <div class="search-container">
-                    <input type="text" id="game-search" class="search-input" placeholder="Search games..." 
-                           value="${currentSearch}" aria-label="Search games">
-                    <button id="search-btn" class="search-button" aria-label="Search">
-                        <svg viewBox="0 0 24 24" width="18" height="18">
-                            <path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z"></path>
-                        </svg>
-                    </button>
-                </div>
-                <div class="filter-container">
-                    <select id="filter-select" class="filter-select" aria-label="Filter games">
-                        <option value="" ${currentFilter === '' ? 'selected' : ''}>All games</option>
-                        <option value="subscribed" ${currentFilter === 'subscribed' ? 'selected' : ''}>Subscribed</option>
-                        <option value="unsubscribed" ${currentFilter === 'unsubscribed' ? 'selected' : ''}>Not subscribed</option>
-                    </select>
-                </div>
-            </div>
-        `;
+    resetFilters() {
+        this.filters = {
+            page: 1,
+            search: '',
+            filter: ''
+        };
     }
     
     /**
-     * Load games from the API for the current guild
+     * Load guild game statistics
      */
-    async function loadGames() {
-        if (!currentGuildId) return;
-        
-        gamesContainer.innerHTML = '<h2>Loading games...</h2><div class="loading-spinner"></div>';
+    async loadGuildStats() {
+        if (!this.currentGuildId) return;
         
         try {
-            // Build URL with query parameters for pagination, search, and filtering
-            let url = `${apiBaseUrl}/api/games/${currentGuildId}?page=${currentPage}&limit=20`;
-            if (currentSearch) {
-                url += `&search=${encodeURIComponent(currentSearch)}`;
-            }
-            if (currentFilter) {
-                url += `&filter=${encodeURIComponent(currentFilter)}`;
-            }
+            this.guildStats = await gameService.getGuildStats(this.currentGuildId);
+        } catch (error) {
+            console.error('Error fetching guild stats:', error);
+            this.guildStats = { totalGames: 0, subscribedGames: 0 };
+        }
+    }
+    
+    /**
+     * Load games with current filters
+     */
+    async loadGames() {
+        if (!this.currentGuildId) return;
+        
+        this.gameList.showLoading();
+        
+        try {
+            // Get games with current filters
+            const result = await gameService.getGuildGames(
+                this.currentGuildId,
+                this.filters.page,
+                20,
+                this.filters.search,
+                this.filters.filter
+            );
             
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                },
-                credentials: 'include'
+            // Render game list
+            this.gameList.render(result, this.guildStats, this.filters);
+            
+            // Setup event handlers
+            this.gameList.setupEventHandlers({
+                onSearch: this.handleSearch.bind(this),
+                onFilter: this.handleFilterChange.bind(this),
+                onPageChange: this.handlePageChange.bind(this),
+                onToggleSubscription: this.handleToggleSubscription.bind(this)
             });
-            
-            if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            const games = result.games || [];
-            const pagination = result.pagination || { total: games.length, page: 1, totalPages: 1 };
-
-            // Always render search and filter controls, even if there are no games
-            let content = `
-                <h2>Games List</h2>
-                ${createSearchAndFilterControls()}
-            `;
-            
-            if (games.length === 0) {
-                content += `<p class="no-games-message">No games available for this server${currentSearch ? ` matching "${currentSearch}"` : ''}${currentFilter ? ` (${currentFilter})` : ''}.</p>`;
-                gamesContainer.innerHTML = content;
-                
-                // Even when there are no games, attach search and filter handlers
-                attachSearchHandlers();
-                attachFilterHandlers();
-                
-                return;
-            }
-
-            content += `
-                <div class="games-grid">
-                    ${games.map(game => createGameCard(game)).join('')}
-                </div>
-                ${createPaginationControls(pagination)}
-            `;
-            
-            gamesContainer.innerHTML = content;
-            
-            // Add click handlers to game cards
-            attachGameCardHandlers();
-            
-            // Add pagination event handlers
-            attachPaginationHandlers(pagination);
-            
-            // Add search handlers
-            attachSearchHandlers();
-            
-            // Add filter change handler
-            attachFilterHandlers();
             
             // Add touch feedback for mobile
-            addTouchFeedback();
-        } catch (error) {
-            gamesContainer.innerHTML = `
-                <h2>Error Loading Games</h2>
-                <div class="error-message">
-                    <p>${error.message}</p>
-                    <p>Please try again later or contact support.</p>
-                </div>
-                ${createSearchAndFilterControls()}
-            `;
+            this.addTouchFeedback();
             
-            // Even on error, attach event handlers to search and filter controls
-            attachSearchHandlers();
-            attachFilterHandlers();
+        } catch (error) {
+            this.gameList.showError(error);
         }
     }
     
     /**
-     * Create a game card HTML
-     * @param {Object} game - Game object from the API
-     * @returns {string} HTML for game card
+     * Handle search input
+     * @param {string} searchValue - Search term
      */
-    function createGameCard(game) {
-        return `
-            <div class="game-card" data-game-id="${game.id}" data-guild-id="${currentGuildId}" data-subscribed="${game.subscribed}" tabindex="0" role="button" aria-pressed="${game.subscribed ? 'true' : 'false'}" aria-label="${game.name}, ${formatDate(game.releaseDate)}, ${game.subscribed ? 'Subscribed' : 'Not subscribed'}">
-                <h3 class="game-title">${game.name}</h3>
-                <div class="game-release-date">Release: ${formatDate(game.releaseDate)}</div>
-                <div class="game-sources">
-                    ${createSourceChips(game.sources)}
-                </div>
-                <div class="toggle-container">
-                    <span class="subscribe-label">${game.subscribed ? 'Subscribed' : 'Subscribe'}</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="game-${game.id}" 
-                            ${game.subscribed ? 'checked' : ''}>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-        `;
+    handleSearch(searchValue) {
+        if (this.filters.search === searchValue) return;
+        
+        this.filters.search = searchValue;
+        this.filters.page = 1; // Reset to first page
+        this.loadGames();
     }
     
     /**
-     * Attach event handlers to game cards
+     * Handle filter change
+     * @param {string} filterValue - Filter value
      */
-    function attachGameCardHandlers() {
-        document.querySelectorAll('.game-card').forEach(card => {
-            // Click handler
-            card.addEventListener('click', function(e) {
-                // Don't trigger if clicking directly on the checkbox
-                if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
-                    return;
-                }
-                
-                toggleGameSubscription(this);
-            });
+    handleFilterChange(filterValue) {
+        if (this.filters.filter === filterValue) return;
+        
+        this.filters.filter = filterValue;
+        this.filters.page = 1; // Reset to first page
+        this.loadGames();
+    }
+    
+    /**
+     * Handle page change
+     * @param {number} pageNumber - New page number
+     */
+    handlePageChange(pageNumber) {
+        if (this.filters.page === pageNumber) return;
+        
+        this.filters.page = pageNumber;
+        this.loadGames();
+        
+        // Scroll to top of games panel
+        this.gamesContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    /**
+     * Handle game subscription toggle
+     * @param {string} gameId - Game ID
+     * @param {boolean} subscribe - Whether to subscribe or unsubscribe
+     */
+    async handleToggleSubscription(gameId, subscribe) {
+        if (!this.currentGuildId || !gameId) return;
+        
+        try {
+            // Optimistic UI update
+            this.gameList.updateGameCard(gameId, subscribe);
             
-            // Keyboard handler for accessibility
-            card.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleGameSubscription(this);
-                }
-            });
-        });
-        
-        // Prevent the checkbox from toggling the card's onClick event when clicked directly
-        document.querySelectorAll('.toggle-switch input').forEach(checkbox => {
-            checkbox.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                const card = this.closest('.game-card');
-                const newSubscribed = this.checked;
-                
-                updateCardUI(card, newSubscribed);
-                
-                const gameId = this.id.replace('game-', '');
-                const guildId = card.getAttribute('data-guild-id');
-                toggleSubscription(guildId, gameId, newSubscribed);
-            });
-        });
-    }
-    
-    /**
-     * Attach event handlers to pagination buttons
-     * @param {Object} pagination - Pagination object from API
-     */
-    function attachPaginationHandlers(pagination) {
-        document.querySelectorAll('.pagination-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                if (this.disabled) return;
-                
-                if (this.classList.contains('prev-btn')) {
-                    currentPage = Math.max(1, currentPage - 1);
-                } else if (this.classList.contains('next-btn')) {
-                    currentPage = Math.min(pagination.totalPages, currentPage + 1);
-                } else {
-                    currentPage = parseInt(this.getAttribute('data-page'), 10);
-                }
-                
-                loadGames();
-                // Scroll to top of games panel
-                gamesContainer.scrollIntoView({ behavior: 'smooth' });
-            });
-        });
-    }
-    
-    /**
-     * Toggle game subscription status
-     * @param {HTMLElement} card - The game card element
-     */
-    function toggleGameSubscription(card) {
-        const gameId = card.getAttribute('data-game-id');
-        const guildId = card.getAttribute('data-guild-id');
-        const currentSubscribed = card.getAttribute('data-subscribed') === 'true';
-        const newSubscribed = !currentSubscribed;
-        
-        // Update UI
-        updateCardUI(card, newSubscribed);
-        
-        // Call API
-        toggleSubscription(guildId, gameId, newSubscribed);
-    }
-    
-    /**
-     * Update card UI based on subscription status
-     * @param {HTMLElement} card - The game card element
-     * @param {boolean} subscribed - New subscription status
-     */
-    function updateCardUI(card, subscribed) {
-        // Update the checkbox
-        const gameId = card.getAttribute('data-game-id');
-        const checkbox = card.querySelector(`#game-${gameId}`);
-        checkbox.checked = subscribed;
-        
-        // Update the card data attribute and aria state
-        card.setAttribute('data-subscribed', subscribed);
-        card.setAttribute('aria-pressed', subscribed);
-        
-        // Update the label
-        const label = card.querySelector('.subscribe-label');
-        if (label) {
-            label.textContent = subscribed ? 'Subscribed' : 'Subscribe';
+            // Update stats locally
+            if (subscribe) {
+                this.guildStats.subscribedGames++;
+            } else {
+                this.guildStats.subscribedGames = Math.max(0, this.guildStats.subscribedGames - 1);
+            }
+            
+            // Update the stats display
+            const gamesCountEl = document.querySelector('.games-count');
+            if (gamesCountEl) {
+                gamesCountEl.textContent = `(${this.guildStats.subscribedGames} subscribed)`;
+            }
+            
+            // Call API
+            await gameService.toggleSubscription(this.currentGuildId, gameId, subscribe);
+            
+        } catch (error) {
+            // Revert UI changes on error
+            this.gameList.updateGameCard(gameId, !subscribe);
+            
+            // Revert stats
+            if (subscribe) {
+                this.guildStats.subscribedGames--;
+            } else {
+                this.guildStats.subscribedGames++;
+            }
+            
+            // Update the stats display
+            const gamesCountEl = document.querySelector('.games-count');
+            if (gamesCountEl) {
+                gamesCountEl.textContent = `(${this.guildStats.subscribedGames} subscribed)`;
+            }
+            
+            // Show error
+            alert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} game: ${error.message}`);
         }
     }
     
     /**
      * Add touch feedback for mobile devices
      */
-    function addTouchFeedback() {
-        const cards = document.querySelectorAll('.game-card');
-        const servers = document.querySelectorAll('.server-item');
+    addTouchFeedback() {
         const buttons = document.querySelectorAll('.pagination-btn, .search-button');
         
-        // Combine all types of elements
-        const elements = [...cards, ...servers, ...buttons];
-        
-        elements.forEach(el => {
+        buttons.forEach(el => {
             // Touch start - add active class
             el.addEventListener('touchstart', function() {
                 this.classList.add('touch-active');
@@ -464,94 +226,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
-    /**
-     * Attach search event handlers
-     */
-    function attachSearchHandlers() {
-        const searchInput = document.getElementById('game-search');
-        const searchBtn = document.getElementById('search-btn');
-        
-        if (searchInput && searchBtn) {
-            // Search button click
-            searchBtn.addEventListener('click', function() {
-                const searchValue = searchInput.value.trim();
-                if (currentSearch !== searchValue) {
-                    currentSearch = searchValue;
-                    currentPage = 1; // Reset to first page on new search
-                    loadGames();
-                }
-            });
-            
-            // Enter key in search input
-            searchInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    const searchValue = this.value.trim();
-                    if (currentSearch !== searchValue) {
-                        currentSearch = searchValue;
-                        currentPage = 1; // Reset to first page on new search
-                        loadGames();
-                    }
-                }
-            });
-        }
-    }
-    
-    /**
-     * Attach filter event handlers
-     */
-    function attachFilterHandlers() {
-        const filterSelect = document.getElementById('filter-select');
-        if (filterSelect) {
-            // Ensure the filter select has the current value
-            filterSelect.value = currentFilter;
-            
-            filterSelect.addEventListener('change', function() {
-                const filterValue = this.value;
-                if (currentFilter !== filterValue) {
-                    currentFilter = filterValue;
-                    currentPage = 1; // Reset to first page on new filter
-                    loadGames();
-                }
-            });
-        }
-    }
-    
-    /**
-     * Toggle subscription via API
-     * @param {string} guildId - Guild ID
-     * @param {string} gameId - Game ID
-     * @param {boolean} subscribe - Whether to subscribe or unsubscribe
-     */
-    window.toggleSubscription = async function(guildId, gameId, subscribe) {
-        try {
-            // Ensure guildId is treated as string to avoid BigInt issues
-            guildId = String(guildId);
-            gameId = String(gameId);
-            
-            const method = subscribe ? 'POST' : 'DELETE';
-            // Using apiBaseUrl for proper environment handling
-            const url = `${apiBaseUrl}/api/guilds/${guildId}/games/${gameId}`;
-            const response = await fetch(url, { 
-                method,
-                credentials: 'include'
-            });
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                alert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} game. Error: ${response.status}`);
-                
-                // Revert UI changes on error
-                const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
-                if (card) {
-                    const previousState = !subscribe;
-                    updateCardUI(card, previousState);
-                }
-                
-                return;
-            }
-        } catch (error) {
-            alert(`An error occurred while ${subscribe ? 'subscribing to' : 'unsubscribing from'} the game.`);
-        }
-    };
+}
+
+// Initialize the dashboard when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    new DashboardController();
 });

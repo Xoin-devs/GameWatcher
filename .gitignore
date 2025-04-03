@@ -4,3 +4,5 @@
 /node_modules
 /todo.md
 /deploy
+/dashboard/hexagonal-api.md
+/dashboard/hexagonal.md

@@ -38,10 +38,7 @@
         </div>
     </div>
 
-    <script nonce="<%= nonce %>">
-        // Pass API base URL from server to client
-        window.apiBaseUrl = '<%= apiBaseUrl %>';
-    </script>
-    <script src="/js/dashboard.js"></script>
+    <!-- Load module scripts with type="module" attribute -->
+    <script nonce="<%= nonce %>" type="module" src="/js/dashboard.js"></script>
 </body>
 </html>

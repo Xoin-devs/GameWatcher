@@ -1,7 +1,7 @@
 require('module-alias/register');
 require('dotenv').config({ path: `.env.${process.env.NODE_ENV || 'dev'}` });
 const logger = require('@shared/logger');
-const WebServer = require('./webServer');
+const WebServer = require('./infrastructure/WebServer');
 
 process.on('uncaughtException', (error) => {
     logger.error('Uncaught Exception:', error);
@@ -25,7 +25,7 @@ async function startApp() {
         
         logger.info('Dashboard started successfully');
     } catch (error) {
-        logger.error('Failed to start application:', error);
+        logger.error('Failed to start application:', error.message);
         process.exit(1);
     }
 }
