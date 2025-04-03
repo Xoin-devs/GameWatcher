@@ -1,41 +1,56 @@
-# Game Watcher Monorepo
+# Game News Forge
 
-Game Watcher is a Discord bot designed to monitor and announce game releases and news. It integrates with platforms like Steam and Twitter to fetch the latest updates and ensures that your Discord community stays informed about upcoming and newly released games.
+Game News Forge is a Discord bot designed to monitor and announce game releases and news. It integrates with platforms like Steam and Twitter to fetch the latest updates and ensures that your Discord community stays informed about upcoming and newly released games.
 
-This repository contains the code for both the bot and the dashboard that allows users to manage the bot's configuration for owned servers. It allows users to subscribe to game announcements.
+This monorepo contains the code for three main components:
+- **Bot**: Discord bot that fetches and distributes game news and release announcements
+- **API**: Backend services for data management
+- **Dashboard**: Web interface that allows users to manage the bot's configuration for owned servers
 
 ## Features
 
 - **Slash Command Handling**: Manage and execute various slash commands for interacting with the bot.
-- **News Fetching**: Retrieve the latest news from Steam's internal and external feeds.
+- **News Fetching**: Retrieve the latest news from Steam's internal and external feeds and Twitter.
 - **Release Announcements**: Schedule and send announcements for game releases using cron jobs.
 - **Permission Management**: Ensure only administrators can execute certain commands.
 - **Auto-Complete**: Provide auto-complete suggestions for game names during interactions.
 - **Logging**: Comprehensive logging for monitoring bot activities and errors.
 - **Dashboard**: Manage the bot's configuration and game subscriptions through a web interface.
+- **Multi-server Support**: Configure the bot differently for each Discord server.
 
 ## Technologies Used
 
-- **Node.js**
-- **Discord.js**
-- **Axios**
-- **Cron**
-- **Joi** for configuration validation
-- **Chalk** for colored console logs
-- **Express**: Web framework for Node.js.
-- **MariaDB**: Database management system.
-- **Passport**: Authentication middleware for Node.js.
-- **EJS**: Embedded JavaScript templating.
-- **dotenv**: Module to load environment variables from a `.env` file.
-- **connect-sqlite3**: SQLite3 session store for Express.
-- **cross-env**: Cross-platform environment setting.
+### Core Technologies
+- **Node.js** - Runtime environment
+- **Discord.js** - Discord API library
+- **Express.js** - Web framework for dashboard and API
+- **MariaDB** - Database management system
+- **PM2** - Process manager for production deployment
+
+### Bot Specific
+- **Puppeteer** - Headless browser for web scraping
+- **Node-cron** - Task scheduling for release announcements
+- **Axios** - HTTP client for API requests
+- **XML2JS** - XML parsing for Steam feeds
+
+### Dashboard Specific
+- **Passport** - Authentication middleware with Discord OAuth
+- **EJS** - Templating engine for server-side rendering
+- **Helmet** - Security middleware
+- **connect-sqlite3** - Session storage
+
+### Development Tools
+- **dotenv** - Environment variable management
+- **cross-env** - Cross-platform environment setting
+- **module-alias** - Module aliasing for cleaner imports
+- **chalk** - Terminal string styling for logs
 
 ## Installation
 
 1. **Clone the Repository**
     ```sh
-    git clone https://github.com/your-repo/game-watcher-monorepo.git
-    cd game-watcher-monorepo
+    git clone https://github.com/your-repo/game-news-forge.git
+    cd game-news-forge
     ```
 
 2. **Install Dependencies**
@@ -44,46 +59,52 @@ This repository contains the code for both the bot and the dashboard that allows
     ```
     
 3. **Configure Environment Variables**
-    - Create `.env.dev` and `.env.prod` files based on the provided templates.
-    - Example `.env.dev`:
-        ```
-        LOG_LEVEL=DEBUG
+    - Create `.env.dev` and `.env.prod` files based on the following template:
+    ```
+    # Logging
+    LOG_LEVEL=INFO  # DEBUG, INFO, WARN, ERROR
 
-        DISCORD_TOKEN=YOUR_DISCORD_TOKEN
-        DISCORD_CLIENT_ID=YOUR_DISCORD_CLIENT_ID
-        DISCORD_CLIENT_SECRET=YOUR_DISCORD_CLIENT_SECRET
-        DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
+    # Discord Configuration
+    DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
+    DISCORD_CLIENT_ID=YOUR_DISCORD_CLIENT_ID
+    DISCORD_CLIENT_SECRET=YOUR_DISCORD_CLIENT_SECRET
+    DISCORD_CALLBACK_URL=http://localhost:3000/auth/callback
+    ADMIN_GUILD_ID=GUILD_ID_FOR_ADMIN_COMMANDS
+    
+    # Web Configuration
+    SESSION_SECRET=YOUR_SESSION_SECRET
+    WEB_PORT=3000
+    WEB_URL=http://localhost
 
-        SESSION_SECRET=YOUR_SESSION_SECRET
+    # Database Configuration
+    DB_HOST=localhost
+    DB_USER=dbuser
+    DB_PASSWORD=dbpassword
+    DB_NAME=gamewatcher
+    DB_PORT=3306
 
-        WEB_PORT=3000
-        WEB_URL=http://localhost
+    # API Configuration
+    API_PORT=8473
+    API_ENDPOINT=http://localhost
+    ```
 
-        DB_HOST=YOUR_DB_HOST
-        DB_USER=YOUR_DB_USER
-        DB_PASSWORD=YOUR_DB_PASSWORD
-        DB_NAME=gamewatcher_dev
-        DB_PORT=3306
+4. **Configure Your Discord Bot**
+    - Create a new application in the [Discord Developer Portal](https://discord.com/developers/applications)
+    - Navigate to the "Bot" tab and create a bot
+    - Copy the bot token to your `.env` files
+    - In the OAuth2 tab:
+        - Set the OAuth2 URL Generator to use scopes: `bot` and `applications.commands`
+        - Set bot permissions:
+            - For development: `Administrator`
+            - For production: `Send Messages`, `Embed Links`, `Attach Files`, `Use Slash Commands`, `Send Messages in Threads`, `Manage Webhooks`
+        - Add a redirect URL matching your `DISCORD_CALLBACK_URL` (e.g., `http://localhost:3000/auth/callback`)
+    - Use the generated URL to add the bot to your server
 
-        API_PORT=8473
-        API_ENDPOINT=http://localhost
-        ```
-
-4. **Configure Your Bot**
-    - Create a new Discord application and bot from the [Discord Developer Portal](https://discord.com/developers/applications).
-    - Copy the bot token and client ID for the `.env.dev` and `.env.prod` files.
-        - If your bot is already created, you can find the client ID and secret in the OAuth2 tab.
-    - In the Installation section
-        - In context, only allow Guild install
-        - Scopes should be `applications.commands` and `bot`
-        - Permissions should be `Administrator` in develompent
-        - Permissions should be `Attach Files`, `Send Messages`, `Embed Links`, `Send Messages in Threads`,`Use Slash Commands` in production
-    - Create a new OAuth2 callback URL
-        - For local development, use `http://localhost:3000/auth/callback`.
-    - Add the bot to your server
+5. **Set Up Database**
+    - Create a MariaDB database matching your configuration
+    - The application will automatically create the necessary tables on first run
 
 ## Usage
-
 ### Development
 
 Start the bot in development mode:
@@ -362,6 +383,16 @@ i:\_workspace_fourtou\Discord\GameWatcher\
     └── timeConstants.js
 ```
 
-### Contributing
+## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request for any enhancements or bug fixes.
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+See the LICENSE file for details.
