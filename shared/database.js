@@ -13,6 +13,7 @@ class DatabaseManager {
     }
 
     async init() {
+        // Use more explicit connection configuration with connection pooling
         this.pool = mariadb.createPool({
             host: process.env.DB_HOST || 'localhost',
             port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
@@ -20,7 +21,10 @@ class DatabaseManager {
             password: process.env.DB_PASSWORD || '',
             database: process.env.DB_NAME || 'mydatabase',
             waitForConnections: true,
+            connectionLimit: 10, // Add connection pool limit for better resource management
+            queueLimit: 0, // Unlimited queue
             connectTimeout: 30000,
+            acquireTimeout: 30000, // Timeout for acquiring a connection from pool
             // Add BigInt support configuration
             supportBigNumbers: true,
             bigNumberStrings: true,
@@ -34,45 +38,61 @@ class DatabaseManager {
         });
 
         logger.debug(`Connecting to database: ${process.env.DB_NAME || 'mydatabase'}`);
-        logger.info('Connected to MariaDB');
-        await this.createTables();
+        
+        try {
+            // Test connection on startup
+            const conn = await this.pool.getConnection();
+            await conn.ping();
+            conn.release();
+            logger.info('Connected to MariaDB successfully');
+            await this.createTables();
+        } catch (err) {
+            logger.error(`Database connection error: ${err.message}`);
+            throw err; // Re-throw to allow app to handle startup failure
+        }
     }
 
     async createTables() {
-        // Modify guild_id to explicitly use VARCHAR(255) to handle Discord snowflakes as strings
-        await this.pool.query(`
-            CREATE TABLE IF NOT EXISTS guilds (
+        // Add indexes for performance and explicit NOT NULL constraints where appropriate
+        const queries = [
+            // Guilds table
+            `CREATE TABLE IF NOT EXISTS guilds (
                 id VARCHAR(255) PRIMARY KEY,
                 channel_id VARCHAR(255) NOT NULL,
                 webhook_url VARCHAR(255) NOT NULL
-            );
-        `);
-        await this.pool.query(`
-            CREATE TABLE IF NOT EXISTS games (
+            );`,
+            
+            // Games table
+            `CREATE TABLE IF NOT EXISTS games (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL UNIQUE,
-                release_date DATE NULL
-            );
-        `);
-        await this.pool.query(`
-            CREATE TABLE IF NOT EXISTS game_sources (
-                game_id INT,
+                release_date DATE NULL,
+                INDEX (release_date)
+            );`,
+            
+            // Game sources table
+            `CREATE TABLE IF NOT EXISTS game_sources (
+                game_id INT NOT NULL,
                 type VARCHAR(50) NOT NULL,
                 source_id VARCHAR(255) NOT NULL,
-                last_update VARCHAR(50),
-                FOREIGN KEY (game_id) REFERENCES games(id),
+                last_update VARCHAR(50) NULL,
+                FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
                 PRIMARY KEY (game_id, type)
-            );
-        `);
-        await this.pool.query(`
-            CREATE TABLE IF NOT EXISTS guild_games (
-                guild_id VARCHAR(255),
-                game_id INT,
-                FOREIGN KEY (guild_id) REFERENCES guilds(id),
-                FOREIGN KEY (game_id) REFERENCES games(id),
+            );`,
+            
+            // Guild games table
+            `CREATE TABLE IF NOT EXISTS guild_games (
+                guild_id VARCHAR(255) NOT NULL,
+                game_id INT NOT NULL,
+                FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE,
+                FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
                 PRIMARY KEY (guild_id, game_id)
-            );
-        `);
+            );`
+        ];
+        
+        for (const query of queries) {
+            await this.pool.query(query);
+        }
     }
 
     // Helper function to validate date format
@@ -85,51 +105,93 @@ class DatabaseManager {
 
     // Helper function to ensure guild IDs are strings
     _ensureString(id) {
-        return String(id);
+        return id === null || id === undefined ? null : String(id);
+    }
+
+    // Helper function to safely execute queries with error handling
+    async _safeQuery(query, params = [], errorMessage = 'Database query error') {
+        try {
+            return await this.pool.query(query, params);
+        } catch (error) {
+            logger.error(`${errorMessage}: ${error.message}`);
+            throw error;
+        }
     }
 
     // Guild methods
     async addGuild(guildId, channelId, webhookUrl) {
         guildId = this._ensureString(guildId);
-        await this.pool.query(
+        return await this._safeQuery(
             'INSERT INTO guilds (id, channel_id, webhook_url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), webhook_url = VALUES(webhook_url)',
-            [guildId, channelId, webhookUrl]
+            [guildId, channelId, webhookUrl],
+            `Error adding guild ${guildId}`
         );
     }
 
     async removeGuildGames(guildId) {
         guildId = this._ensureString(guildId);
         logger.debug(`Removing guild games associations for guild ID ${guildId}`);
-        await this.pool.query('DELETE FROM guild_games WHERE guild_id = ?', [guildId]);
+        await this._safeQuery(
+            'DELETE FROM guild_games WHERE guild_id = ?',
+            [guildId],
+            `Error removing games for guild ${guildId}`
+        );
         logger.debug(`Successfully removed guild games for guild ID ${guildId}`);
     }
 
     async removeGuild(guildId) {
         guildId = this._ensureString(guildId);
         logger.debug(`Removing guild ID ${guildId} from database`);
-        await this.pool.query('DELETE FROM guilds WHERE id = ?', [guildId]);
+        await this._safeQuery(
+            'DELETE FROM guilds WHERE id = ?',
+            [guildId],
+            `Error removing guild ${guildId}`
+        );
         logger.info(`Successfully removed guild ID ${guildId}`);
     }
     
     async cleanupGuild(guildId) {
         guildId = this._ensureString(guildId);
         logger.debug(`Starting full cleanup for guild ID ${guildId}`);
-        await this.removeGuildGames(guildId);
-        await this.removeGuild(guildId);
-        logger.info(`Completed full cleanup for guild ID ${guildId}`);
+        
+        // Use a transaction to ensure atomicity
+        let conn;
+        try {
+            conn = await this.pool.getConnection();
+            await conn.beginTransaction();
+            
+            await conn.query('DELETE FROM guild_games WHERE guild_id = ?', [guildId]);
+            await conn.query('DELETE FROM guilds WHERE id = ?', [guildId]);
+            
+            await conn.commit();
+            logger.info(`Completed full cleanup for guild ID ${guildId}`);
+        } catch (error) {
+            if (conn) await conn.rollback();
+            logger.error(`Error during guild cleanup for ${guildId}: ${error.message}`);
+            throw error;
+        } finally {
+            if (conn) conn.release();
+        }
     }
 
     async getGuilds() {
-        return await this.pool.query('SELECT * FROM guilds');
+        return await this._safeQuery(
+            'SELECT * FROM guilds',
+            [],
+            'Error fetching guilds'
+        );
     }
 
     async getGuild(guildId) {
         guildId = this._ensureString(guildId);
         
         try {
-            const rows = await this.pool.query('SELECT * FROM guilds WHERE id = ?', [guildId]);
-            if (rows.length === 0) return null;
-            return rows[0];
+            const rows = await this._safeQuery(
+                'SELECT * FROM guilds WHERE id = ?',
+                [guildId],
+                `Error getting guild ${guildId}`
+            );
+            return rows.length === 0 ? null : rows[0];
         } catch (error) {
             logger.error(`Error getting guild ${guildId}: ${error.message}`);
             throw error;
@@ -145,9 +207,10 @@ class DatabaseManager {
         guildId = this._ensureString(guildId);
         logger.debug(`Updating webhook URL for guild ID ${guildId}`);
         try {
-            const result = await this.pool.query(
+            const result = await this._safeQuery(
                 'UPDATE guilds SET webhook_url = ? WHERE id = ?',
-                [webhookUrl, guildId]
+                [webhookUrl, guildId],
+                `Error updating webhook for guild ${guildId}`
             );
             
             if (result.affectedRows === 0) {
@@ -166,122 +229,205 @@ class DatabaseManager {
     // Game methods
     async addGame(name, sources = [], releaseDate = null) {
         const dateVal = this._validateDateFormat(releaseDate);
-        const res = await this.pool.query(
-            'INSERT INTO games (name, release_date) VALUES (?, ?)',
-            [name, dateVal]
-        );
-        const gameId = res.insertId;
         
-        for (const source of sources) {
-            for (const [type, sourceId] of Object.entries(source)) {
-                if (type === 'lastUpdate') continue;
-                await this.pool.query(
-                    'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
-                    [gameId, type, sourceId, source.lastUpdate || null]
-                );
+        // Use a transaction to ensure atomicity
+        let conn;
+        try {
+            conn = await this.pool.getConnection();
+            await conn.beginTransaction();
+            
+            const res = await conn.query(
+                'INSERT INTO games (name, release_date) VALUES (?, ?)',
+                [name, dateVal]
+            );
+            const gameId = res.insertId;
+            
+            for (const source of sources) {
+                for (const [type, sourceId] of Object.entries(source)) {
+                    if (type === 'lastUpdate') continue;
+                    await conn.query(
+                        'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
+                        [gameId, type, sourceId, source.lastUpdate || null]
+                    );
+                }
             }
+            
+            await conn.commit();
+            return gameId;
+        } catch (error) {
+            if (conn) await conn.rollback();
+            logger.error(`Error adding game ${name}: ${error.message}`);
+            throw error;
+        } finally {
+            if (conn) conn.release();
         }
-        return gameId;
     }
 
     async updateGame(name, sources = [], releaseDate = null) {
         logger.debug('updateGame called with:', { name, sources, releaseDate });
         const dateVal = this._validateDateFormat(releaseDate);
         
-        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        // Find the game first
+        const rows = await this._safeQuery(
+            'SELECT id FROM games WHERE name = ?',
+            [name],
+            `Error finding game ${name}`
+        );
+        
         if (rows.length === 0) return false;
         const gameId = rows[0].id;
         
-        logger.debug('Updating game:', { gameId });
-        await this.pool.query(
-            'UPDATE games SET release_date = ? WHERE id = ?',
-            [dateVal, gameId]
-        );
-        await this.pool.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
-        
-        for (const source of sources) {
-            for (const [type, sourceId] of Object.entries(source)) {
-                if (type === 'lastUpdate') continue;
-                await this.pool.query(
-                    'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
-                    [gameId, type, sourceId, source.lastUpdate || null]
-                );
+        // Use a transaction to ensure atomicity
+        let conn;
+        try {
+            conn = await this.pool.getConnection();
+            await conn.beginTransaction();
+            
+            logger.debug('Updating game:', { gameId });
+            await conn.query(
+                'UPDATE games SET release_date = ? WHERE id = ?',
+                [dateVal, gameId]
+            );
+            
+            // Delete and re-insert sources
+            await conn.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
+            
+            for (const source of sources) {
+                for (const [type, sourceId] of Object.entries(source)) {
+                    if (type === 'lastUpdate') continue;
+                    await conn.query(
+                        'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
+                        [gameId, type, sourceId, source.lastUpdate || null]
+                    );
+                }
             }
+            
+            await conn.commit();
+            logger.debug('New sources:', sources);
+            return true;
+        } catch (error) {
+            if (conn) await conn.rollback();
+            logger.error(`Error updating game ${name}: ${error.message}`);
+            throw error;
+        } finally {
+            if (conn) conn.release();
         }
-        logger.debug('New sources:', sources);
-        return true;
     }
 
     async updateSourceLastUpdate(gameName, sourceType, sourceId, lastUpdate) {
         logger.debug(`Updating last update date for game '${gameName}', type '${sourceType}', id '${sourceId}', setting lastUpdate to '${lastUpdate}'`);
 
-        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [gameName]);
+        const rows = await this._safeQuery(
+            'SELECT id FROM games WHERE name = ?',
+            [gameName],
+            `Error finding game ${gameName}`
+        );
+        
         if (rows.length === 0) return false;
         const gameId = rows[0].id;
     
-        await this.pool.query(
+        await this._safeQuery(
             'UPDATE game_sources SET last_update = ? WHERE game_id = ? AND type = ? AND source_id = ?',
-            [lastUpdate, gameId, sourceType, sourceId]
+            [lastUpdate, gameId, sourceType, sourceId],
+            `Error updating last update for game ${gameName}`
         );
+        
         logger.info(`Successfully updated lastUpdate for game '${gameName}' - sourceType '${sourceType}', sourceId '${sourceId}' to '${lastUpdate}'`);
         return true;
     }
 
     async removeGame(name) {
-        const rows = await this.pool.query('SELECT id FROM games WHERE name = ?', [name]);
+        const rows = await this._safeQuery(
+            'SELECT id FROM games WHERE name = ?',
+            [name],
+            `Error finding game ${name}`
+        );
+        
         if (rows.length === 0) return false;
         const gameId = rows[0].id;
         
-        await this.pool.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
-        await this.pool.query('DELETE FROM games WHERE id = ?', [gameId]);
+        // With ON DELETE CASCADE in the foreign keys, we only need to delete the game
+        await this._safeQuery(
+            'DELETE FROM games WHERE id = ?',
+            [gameId],
+            `Error removing game ${name}`
+        );
+        
         return true;
     }
 
     async getGames() {
-        const games = await this.pool.query('SELECT * FROM games');
-        const result = [];
-        for (const game of games) {
-            const sources = await this.pool.query(
-                'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
-                [game.id]
-            );
-            result.push({
-                id: game.id,
-                name: game.name,
-                sources: sources.map(s => ({
-                    [s.type]: s.source_id,
-                    lastUpdate: s.last_update
-                })),
-                ...(game.release_date && { releaseDate: game.release_date })
-            });
+        // Optimize by using a JOIN query to reduce database calls
+        const gamesResult = await this._safeQuery(`
+            SELECT g.id, g.name, g.release_date, gs.type, gs.source_id, gs.last_update 
+            FROM games g
+            LEFT JOIN game_sources gs ON g.id = gs.game_id
+            ORDER BY g.name
+        `, [], 'Error fetching games');
+        
+        // Process the results
+        const gamesMap = new Map();
+        
+        for (const row of gamesResult) {
+            if (!gamesMap.has(row.id)) {
+                gamesMap.set(row.id, {
+                    id: row.id,
+                    name: row.name,
+                    sources: [],
+                    ...(row.release_date && { releaseDate: row.release_date })
+                });
+            }
+            
+            const game = gamesMap.get(row.id);
+            
+            // Only add sources if they exist
+            if (row.type && row.source_id) {
+                game.sources.push({
+                    [row.type]: row.source_id,
+                    lastUpdate: row.last_update
+                });
+            }
         }
-        return result;
+        
+        return Array.from(gamesMap.values());
     }
 
     async getGame(name) {
-        const rows = await this.pool.query('SELECT * FROM games WHERE name = ?', [name]);
-        if (rows.length === 0) return null;
-        const game = rows[0];
-        const sources = await this.pool.query(
-            'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
-            [game.id]
-        );
+        // Optimize by using a JOIN query to reduce database calls
+        const gameResult = await this._safeQuery(`
+            SELECT g.id, g.name, g.release_date, gs.type, gs.source_id, gs.last_update
+            FROM games g
+            LEFT JOIN game_sources gs ON g.id = gs.game_id
+            WHERE g.name = ?
+        `, [name], `Error fetching game ${name}`);
+        
+        if (gameResult.length === 0) return null;
+        
+        // Process the result
+        const sources = [];
+        for (const row of gameResult) {
+            if (row.type && row.source_id) {
+                sources.push({
+                    [row.type]: row.source_id,
+                    lastUpdate: row.last_update
+                });
+            }
+        }
+        
         return {
-            name: game.name,
-            sources: sources.map(s => ({
-                [s.type]: s.source_id,
-                lastUpdate: s.last_update
-            })),
-            ...(game.release_date && { releaseDate: game.release_date })
+            name: gameResult[0].name,
+            sources: sources,
+            ...(gameResult[0].release_date && { releaseDate: gameResult[0].release_date })
         };
     }
 
     async updateGameReleaseDate(gameId, releaseDate) {
         const dateVal = this._validateDateFormat(releaseDate);
         
-        await this.pool.query(
+        await this._safeQuery(
             'UPDATE games SET release_date = ? WHERE id = ?',
-            [dateVal, gameId]
+            [dateVal, gameId],
+            `Error updating release date for game ${gameId}`
         );
         
         logger.info(`Updated release date to ${releaseDate} for game ID ${gameId}`);
@@ -291,17 +437,19 @@ class DatabaseManager {
     // Guild-Game relationship methods
     async linkGameToGuild(guildId, gameId) {
         guildId = this._ensureString(guildId);
-        await this.pool.query(
+        await this._safeQuery(
             'INSERT INTO guild_games (guild_id, game_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE guild_id = guild_id',
-            [guildId, gameId]
+            [guildId, gameId],
+            `Error linking game ${gameId} to guild ${guildId}`
         );
     }
 
     async unlinkGameFromGuild(guildId, gameId) {
         guildId = this._ensureString(guildId);
-        await this.pool.query(
+        await this._safeQuery(
             'DELETE FROM guild_games WHERE guild_id = ? AND game_id = ?',
-            [guildId, gameId]
+            [guildId, gameId],
+            `Error unlinking game ${gameId} from guild ${guildId}`
         );
     }
 
@@ -309,9 +457,10 @@ class DatabaseManager {
         guildId = this._ensureString(guildId);
         
         try {
-            const result = await this.pool.query(
+            const result = await this._safeQuery(
                 'SELECT 1 FROM guild_games WHERE guild_id = ? AND game_id = ?',
-                [guildId, gameId]
+                [guildId, gameId],
+                `Error checking subscription for game ${gameId} in guild ${guildId}`
             );
             
             return result.length > 0;
@@ -323,45 +472,41 @@ class DatabaseManager {
 
     async getGuildGames(guildId) {
         guildId = this._ensureString(guildId);
-        const games = await this.pool.query(`
+        return await this._safeQuery(`
             SELECT g.id, g.name, g.release_date
             FROM games g
             JOIN guild_games gg ON g.id = gg.game_id
             WHERE gg.guild_id = ?
-        `, [guildId]);
-        return games;
+            ORDER BY g.name
+        `, [guildId], `Error fetching games for guild ${guildId}`);
     }
 
     async getGuildGame(guildId, gameName) {
         guildId = this._ensureString(guildId);
-        const rows = await this.pool.query(`
+        const rows = await this._safeQuery(`
             SELECT g.id, g.name, g.release_date
             FROM games g
             JOIN guild_games gg ON g.id = gg.game_id
             WHERE gg.guild_id = ? AND g.name = ?
-        `, [guildId, gameName]);
-        if (rows.length === 0) return null;
-        return rows[0];
+        `, [guildId, gameName], `Error fetching game ${gameName} for guild ${guildId}`);
+        
+        return rows.length === 0 ? null : rows[0];
     }
 
     async getGuildGameStats(guildId) {
         guildId = this._ensureString(guildId);
         
         try {
-            // Count total games in system
-            const totalGamesResult = await this.pool.query(
-                'SELECT COUNT(*) as total FROM games'
-            );
-            
-            // Count subscribed games for the guild
-            const subscribedGamesResult = await this.pool.query(
-                'SELECT COUNT(*) as total FROM guild_games WHERE guild_id = ?',
-                [guildId]
-            );
+            // Optimize to use a single query with subqueries
+            const result = await this._safeQuery(`
+                SELECT 
+                    (SELECT COUNT(*) FROM games) as totalGames,
+                    (SELECT COUNT(*) FROM guild_games WHERE guild_id = ?) as subscribedGames
+            `, [guildId], `Error fetching game stats for guild ${guildId}`);
             
             return {
-                totalGames: totalGamesResult[0].total,
-                subscribedGames: subscribedGamesResult[0].total
+                totalGames: result[0].totalGames,
+                subscribedGames: result[0].subscribedGames
             };
         } catch (error) {
             logger.error(`Error getting game stats for guild ${guildId}: ${error.message}`);
@@ -415,31 +560,47 @@ class DatabaseManager {
             const countParams = [guildId];
             if (search) countParams.push(`%${search}%`);
             logger.debug(`Count SQL params: ${JSON.stringify(countParams)}`);
-            const countResult = await this.pool.query(countQuery, countParams);
+            const countResult = await this._safeQuery(countQuery, countParams, `Error counting games for guild ${guildId}`);
             const totalGames = countResult[0].total;
             
             // Get paginated games
             logger.debug(`Final SQL params: ${JSON.stringify(params)}`);
-            const games = await this.pool.query(baseQuery, params);
-            const result = [];
+            const games = await this._safeQuery(baseQuery, params, `Error fetching paginated games for guild ${guildId}`);
             
-            for (const game of games) {
-                const sources = await this.pool.query(
-                    'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
-                    [game.id]
+            // Fetch all game sources in one query for better performance
+            const gameIds = games.map(g => g.id);
+            let gameSources = [];
+            
+            if (gameIds.length > 0) {
+                gameSources = await this._safeQuery(
+                    `SELECT game_id, type, source_id, last_update 
+                     FROM game_sources 
+                     WHERE game_id IN (?)`,
+                    [gameIds],
+                    `Error fetching sources for games ${gameIds}`
                 );
-                
-                result.push({
-                    id: game.id,
-                    name: game.name,
-                    sources: sources.map(s => ({
-                        [s.type]: s.source_id,
-                        lastUpdate: s.last_update
-                    })),
-                    subscribed: game.subscribed === 1,
-                    ...(game.release_date && { releaseDate: game.release_date })
+            }
+            
+            // Group sources by game_id
+            const sourcesByGameId = {};
+            for (const source of gameSources) {
+                if (!sourcesByGameId[source.game_id]) {
+                    sourcesByGameId[source.game_id] = [];
+                }
+                sourcesByGameId[source.game_id].push({
+                    [source.type]: source.source_id,
+                    lastUpdate: source.last_update
                 });
             }
+            
+            // Build result with sources included
+            const result = games.map(game => ({
+                id: game.id,
+                name: game.name,
+                sources: sourcesByGameId[game.id] || [],
+                subscribed: game.subscribed === 1,
+                ...(game.release_date && { releaseDate: game.release_date })
+            }));
             
             return {
                 games: result,
@@ -458,7 +619,12 @@ class DatabaseManager {
 
     // Game release methods
     async getGamesReleasingOn(date) {
-        const rows = await this.pool.query('SELECT id, name, release_date FROM games WHERE release_date = ?', [date]);
+        const rows = await this._safeQuery(
+            'SELECT id, name, release_date FROM games WHERE release_date = ? ORDER BY name',
+            [date],
+            `Error fetching games releasing on ${date}`
+        );
+        
         return rows.map(game => ({
             id: game.id,
             name: game.name,
@@ -467,42 +633,60 @@ class DatabaseManager {
     }
     
     async getGamesWithMissingReleaseDate() {
-        const games = await this.pool.query('SELECT id, name FROM games WHERE release_date IS NULL');
-        const result = [];
+        // Optimize by using a JOIN query
+        const results = await this._safeQuery(`
+            SELECT g.id, g.name, gs.type, gs.source_id, gs.last_update
+            FROM games g
+            LEFT JOIN game_sources gs ON g.id = gs.game_id
+            WHERE g.release_date IS NULL
+            ORDER BY g.name
+        `, [], 'Error fetching games with missing release dates');
         
-        for (const game of games) {
-            const sources = await this.pool.query(
-                'SELECT type, source_id, last_update FROM game_sources WHERE game_id = ?',
-                [game.id]
-            );
+        // Process the results
+        const gamesMap = new Map();
+        
+        for (const row of results) {
+            if (!gamesMap.has(row.id)) {
+                gamesMap.set(row.id, {
+                    id: row.id,
+                    name: row.name,
+                    sources: []
+                });
+            }
             
-            result.push({
-                id: game.id,
-                name: game.name,
-                sources: sources.map(s => ({
-                    [s.type]: s.source_id,
-                    lastUpdate: s.last_update
-                }))
-            });
+            const game = gamesMap.get(row.id);
+            
+            // Only add sources if they exist
+            if (row.type && row.source_id) {
+                game.sources.push({
+                    [row.type]: row.source_id,
+                    lastUpdate: row.last_update
+                });
+            }
         }
         
-        return result;
+        return Array.from(gamesMap.values());
     }
 
     // Game queries
     async getGuildsForGame(gameName) {
-        return await this.pool.query(`
+        return await this._safeQuery(`
             SELECT guilds.id, guilds.channel_id, guilds.webhook_url
             FROM guilds
             JOIN guild_games gg ON guilds.id = gg.guild_id
             JOIN games g ON gg.game_id = g.id
             WHERE g.name = ?
-        `, [gameName]);
+        `, [gameName], `Error fetching guilds for game ${gameName}`);
     }
 
     // Cleanup
     async close() {
-        await this.pool.end();
+        try {
+            await this.pool.end();
+            logger.info('Database connection pool closed');
+        } catch (error) {
+            logger.error(`Error closing database connection pool: ${error.message}`);
+        }
     }
 }
 
