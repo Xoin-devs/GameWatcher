@@ -22,7 +22,8 @@ class GameRepositoryImpl extends GameRepository {
      */
     async getGuildGames(guildId, page = 1, limit = 20, search = '', filter = '') {
         try {
-            let url = `${this.apiUrl}/games/${guildId}?page=${page}&limit=${limit}`;
+            // Updated URL to match the API's actual endpoint pattern
+            let url = `${this.apiUrl}/guilds/${guildId}/games?page=${page}&limit=${limit}`;
             
             if (search) {
                 url += `&search=${encodeURIComponent(search)}`;
@@ -75,7 +76,7 @@ class GameRepositoryImpl extends GameRepository {
             logger.error(`Error fetching guild game stats: ${error.message}`);
             
             // Return default stats if API doesn't support this endpoint yet
-            if (error.statusCode = 404) {
+            if (error.statusCode === 404) {
                 return { totalGames: 0, subscribedGames: 0 };
             }
             
@@ -88,11 +89,13 @@ class GameRepositoryImpl extends GameRepository {
      */
     async linkGameToGuild(guildId, gameId) {
         try {
-            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}`, {
+            // Updated to use the toggle endpoint with proper payload
+            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({ subscribe: true })
             });
             
             if (response.status === 404) {
@@ -115,8 +118,13 @@ class GameRepositoryImpl extends GameRepository {
      */
     async unlinkGameFromGuild(guildId, gameId) {
         try {
-            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}`, {
-                method: 'DELETE'
+            // Updated to use the toggle endpoint with proper payload
+            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ subscribe: false })
             });
             
             if (response.status === 404) {

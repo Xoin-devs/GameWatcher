@@ -509,6 +509,63 @@ class DatabaseManager {
         if (rows.length === 0) return null;
         return rows[0];
     }
+
+    async getGuildGameStats(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
+        
+        try {
+            // Count total games in system
+            const totalGamesResult = await this.pool.query(
+                'SELECT COUNT(*) as total FROM games'
+            );
+            
+            // Count subscribed games for the guild
+            const subscribedGamesResult = await this.pool.query(
+                'SELECT COUNT(*) as total FROM guild_games WHERE guild_id = ?',
+                [guildId]
+            );
+            
+            return {
+                totalGames: totalGamesResult[0].total,
+                subscribedGames: subscribedGamesResult[0].total
+            };
+        } catch (error) {
+            logger.error(`Error getting game stats for guild ${guildId}: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async isGameSubscribed(guildId, gameId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
+        
+        try {
+            const result = await this.pool.query(
+                'SELECT 1 FROM guild_games WHERE guild_id = ? AND game_id = ?',
+                [guildId, gameId]
+            );
+            
+            return result.length > 0;
+        } catch (error) {
+            logger.error(`Error checking if game ${gameId} is subscribed for guild ${guildId}: ${error.message}`);
+            throw error;
+        }
+    }
+
+    async getGuild(guildId) {
+        // Ensure guildId is treated as string to avoid BigInt issues
+        guildId = String(guildId);
+        
+        try {
+            const rows = await this.pool.query('SELECT * FROM guilds WHERE id = ?', [guildId]);
+            if (rows.length === 0) return null;
+            return rows[0];
+        } catch (error) {
+            logger.error(`Error getting guild ${guildId}: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = DatabaseManager;
