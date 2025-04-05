@@ -46,7 +46,7 @@ class GameList {
         const { search, filter, page } = filters;
         
         let content = `
-            <h2>Games List <span class="games-count">(${stats.subscribedGames} subscribed)</span></h2>
+            <h2>Games List <span class="games-count">(${stats.totalGames} total, ${stats.subscribedGames} subscribed)</span></h2>
             ${this.createSearchAndFilterControls(search, filter)}
         `;
         
