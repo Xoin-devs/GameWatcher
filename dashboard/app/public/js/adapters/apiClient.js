@@ -33,7 +33,6 @@ class ApiClient {
         const requestOptions = { ...defaultOptions, ...options };
         
         try {
-            console.log(`Making API request to: ${url}`, requestOptions);
             const response = await fetch(url, requestOptions);
             
             if (!response.ok) {
@@ -41,7 +40,6 @@ class ApiClient {
             }
             
             const responseData = await response.json();
-            console.log(`API response for ${endpoint}:`, responseData);
             
             // Handle the new response format from the updated API
             if (responseData && responseData.hasOwnProperty('success')) {
@@ -50,7 +48,7 @@ class ApiClient {
                     throw new Error(responseData.message || 'API request failed');
                 }
                 // Return just the data property from the standardized response
-                console.log(`Extracted data from API response:`, responseData.data);
+                
                 return responseData.data;
             }
             
