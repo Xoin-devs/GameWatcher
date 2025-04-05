@@ -12,6 +12,7 @@ class GameList {
     constructor(container, onSubscriptionChange) {
         this.container = container;
         this.onSubscriptionChange = onSubscriptionChange;
+        this.currentStats = { totalGames: 0, subscribedGames: 0 };
     }
     
     /**
@@ -44,6 +45,9 @@ class GameList {
     render(data, stats, filters) {
         const { games, pagination } = data;
         const { search, filter, page } = filters;
+        
+        // Store current stats for later updates
+        this.currentStats = { ...stats };
         
         let content = `
             <h2>Games List <span class="games-count">(${stats.totalGames} total, ${stats.subscribedGames} subscribed)</span></h2>
@@ -112,7 +116,9 @@ class GameList {
         const chips = [];
         
         sources.forEach(sourceObj => {
-            const sourceKey = Object.keys(sourceObj)[0];
+            // Get the source type directly from the Source entity's type property
+            const sourceKey = sourceObj.type;
+            
             const sourceInfo = formatters.getSourceInfo(sourceKey);
             
             // Create a key for deduplication (use the label for display consistency)
@@ -220,8 +226,8 @@ class GameList {
         const { onSearch, onFilter, onPageChange, onToggleSubscription } = callbacks;
         
         // Search button click
-        const searchBtn = document.getElementById('search-btn');
-        const searchInput = document.getElementById('game-search');
+        const searchBtn = this.container.querySelector('#search-btn');
+        const searchInput = this.container.querySelector('#game-search');
         
         if (searchBtn && searchInput) {
             searchBtn.addEventListener('click', () => {
@@ -236,7 +242,7 @@ class GameList {
         }
         
         // Filter change
-        const filterSelect = document.getElementById('filter-select');
+        const filterSelect = this.container.querySelector('#filter-select');
         if (filterSelect) {
             filterSelect.addEventListener('change', () => {
                 onFilter(filterSelect.value);
@@ -244,7 +250,7 @@ class GameList {
         }
         
         // Pagination buttons
-        document.querySelectorAll('.pagination-btn').forEach(btn => {
+        this.container.querySelectorAll('.pagination-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 if (btn.disabled) return;
                 
@@ -262,7 +268,7 @@ class GameList {
         });
         
         // Game cards
-        document.querySelectorAll('.game-card').forEach(card => {
+        this.container.querySelectorAll('.game-card').forEach(card => {
             // Click handler
             card.addEventListener('click', (e) => {
                 // Don't trigger if clicking directly on the checkbox
@@ -287,7 +293,7 @@ class GameList {
         });
         
         // Checkboxes on game cards
-        document.querySelectorAll('.toggle-switch input').forEach(checkbox => {
+        this.container.querySelectorAll('.toggle-switch input').forEach(checkbox => {
             checkbox.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
@@ -298,12 +304,27 @@ class GameList {
     }
     
     /**
+     * Update the game statistics display
+     * @param {Object} stats - Updated game statistics
+     */
+    updateStats(stats) {
+        // Update stored stats
+        this.currentStats = { ...stats };
+        
+        // Update the stats display
+        const gamesCountEl = this.container.querySelector('.games-count');
+        if (gamesCountEl) {
+            gamesCountEl.textContent = `(${stats.totalGames} total, ${stats.subscribedGames} subscribed)`;
+        }
+    }
+    
+    /**
      * Update a game card's subscription state
      * @param {string} gameId - Game ID
      * @param {boolean} subscribed - New subscription state
      */
     updateGameCard(gameId, subscribed) {
-        const card = document.querySelector(`.game-card[data-game-id="${gameId}"]`);
+        const card = this.container.querySelector(`.game-card[data-game-id="${gameId}"]`);
         if (!card) return;
         
         // Update checkbox
@@ -317,6 +338,25 @@ class GameList {
         // Update label
         const label = card.querySelector('.subscribe-label');
         if (label) label.textContent = subscribed ? 'Subscribed' : 'Subscribe';
+    }
+    
+    /**
+     * Add touch feedback for mobile devices
+     */
+    addTouchFeedback() {
+        this.container.querySelectorAll('.pagination-btn, .search-button').forEach(el => {
+            // Touch start - add active class
+            el.addEventListener('touchstart', function() {
+                this.classList.add('touch-active');
+            }, { passive: true });
+            
+            // Touch end/cancel - remove active class
+            ['touchend', 'touchcancel'].forEach(eventType => {
+                el.addEventListener(eventType, function() {
+                    this.classList.remove('touch-active');
+                }, { passive: true });
+            });
+        });
     }
 }
 

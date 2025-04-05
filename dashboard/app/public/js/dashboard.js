@@ -32,7 +32,8 @@ class DashboardController {
         // Initialize server list
         this.serverList = new ServerList(
             this.serverItems, 
-            this.handleServerSelect.bind(this)
+            this.handleServerSelect.bind(this),
+            this.handleMobileServerSelect.bind(this)
         );
         this.serverList.addTouchFeedback();
         
@@ -54,6 +55,16 @@ class DashboardController {
         // Load data
         await this.loadGuildStats();
         await this.loadGames();
+    }
+    
+    /**
+     * Handle mobile view server selection (scrolling to games panel)
+     */
+    handleMobileServerSelect() {
+        const gamesPanel = document.querySelector('.games-panel');
+        if (gamesPanel) {
+            gamesPanel.scrollIntoView({ behavior: 'smooth' });
+        }
     }
     
     /**
@@ -111,7 +122,7 @@ class DashboardController {
             });
             
             // Add touch feedback for mobile
-            this.addTouchFeedback();
+            this.gameList.addTouchFeedback();
             
         } catch (error) {
             this.gameList.showError(error);
@@ -175,11 +186,8 @@ class DashboardController {
                 this.guildStats.subscribedGames = Math.max(0, this.guildStats.subscribedGames - 1);
             }
             
-            // Update the stats display
-            const gamesCountEl = document.querySelector('.games-count');
-            if (gamesCountEl) {
-                gamesCountEl.textContent = `(${this.guildStats.subscribedGames} subscribed)`;
-            }
+            // Update the stats display using GameList method
+            this.gameList.updateStats(this.guildStats);
             
             // Call API
             await gameService.toggleSubscription(this.currentGuildId, gameId, subscribe);
@@ -195,36 +203,12 @@ class DashboardController {
                 this.guildStats.subscribedGames++;
             }
             
-            // Update the stats display
-            const gamesCountEl = document.querySelector('.games-count');
-            if (gamesCountEl) {
-                gamesCountEl.textContent = `(${this.guildStats.subscribedGames} subscribed)`;
-            }
+            // Update the stats display with reverted values
+            this.gameList.updateStats(this.guildStats);
             
             // Show error
             alert(`Failed to ${subscribe ? 'subscribe to' : 'unsubscribe from'} game: ${error.message}`);
         }
-    }
-    
-    /**
-     * Add touch feedback for mobile devices
-     */
-    addTouchFeedback() {
-        const buttons = document.querySelectorAll('.pagination-btn, .search-button');
-        
-        buttons.forEach(el => {
-            // Touch start - add active class
-            el.addEventListener('touchstart', function() {
-                this.classList.add('touch-active');
-            }, { passive: true });
-            
-            // Touch end/cancel - remove active class
-            ['touchend', 'touchcancel'].forEach(eventType => {
-                el.addEventListener(eventType, function() {
-                    this.classList.remove('touch-active');
-                }, { passive: true });
-            });
-        });
     }
 }
 

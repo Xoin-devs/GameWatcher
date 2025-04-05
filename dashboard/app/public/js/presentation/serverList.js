@@ -6,10 +6,12 @@ class ServerList {
      * Initialize the component
      * @param {NodeList} serverItems - Server list items
      * @param {Function} onServerSelect - Callback for server selection
+     * @param {Function} onMobileServerSelect - Callback for mobile view server selection
      */
-    constructor(serverItems, onServerSelect) {
+    constructor(serverItems, onServerSelect, onMobileServerSelect = null) {
         this.serverItems = serverItems;
         this.onServerSelect = onServerSelect;
+        this.onMobileServerSelect = onMobileServerSelect;
         this.setupEventHandlers();
     }
     
@@ -51,12 +53,9 @@ class ServerList {
             this.onServerSelect(guildId);
         }
         
-        // On mobile, scroll to games section
-        if (window.innerWidth <= 768) {
-            const gamesPanel = document.querySelector('.games-panel');
-            if (gamesPanel) {
-                gamesPanel.scrollIntoView({ behavior: 'smooth' });
-            }
+        // On mobile, let the parent handle the scrolling
+        if (window.innerWidth <= 768 && this.onMobileServerSelect) {
+            this.onMobileServerSelect();
         }
     }
     
