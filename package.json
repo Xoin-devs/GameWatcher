@@ -24,13 +24,14 @@
     "start:dashboard:prod": "npm --prefix dashboard run start:prod",
     "deployCommands:dev": "npm --prefix bot run deployCommands:dev",
     "deployCommands:prod": "npm --prefix bot run deployCommands:prod",
-    "build:bot": "node scripts/deploy.js bot",
-    "build:api": "node scripts/deploy.js api",
-    "build:dashboard": "node scripts/deploy.js dashboard",
-    "build:all": "npm run build:bot && npm run build:api && npm run build:dashboard",
-    "deploy:bot": "npm run build:bot && node scripts/deployToVPS.js --project bot",
-    "deploy:api": "npm run build:api && node scripts/deployToVPS.js --project api",
-    "deploy:dashboard": "npm run build:dashboard && node scripts/deployToVPS.js --project dashboard"
+    "build:bot:prod": "node scripts/build.js bot prod",
+    "build:api:prod": "node scripts/build.js api prod",
+    "build:dashboard:prod": "node scripts/build.js dashboard prod",
+    "build:all:prod": "npm run build:bot:prod && npm run build:api:prod && npm run build:dashboard:prod",
+    "build:bot:dev": "node scripts/build.js bot dev",
+    "build:api:dev": "node scripts/build.js api dev",
+    "build:dashboard:dev": "node scripts/build.js dashboard dev",
+    "build:all:dev": "npm run build:bot:dev && npm run build:api:dev && npm run build:dashboard:dev"
   },
   "dependencies": {
     "chalk": "^4.1.2",

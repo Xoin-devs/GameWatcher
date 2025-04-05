@@ -56,10 +56,38 @@ try {
 
 // Copy environment file
 console.log(`Copying .env.${env} file...`);
-fs.copyFileSync(
-  path.join(rootDir, `.env.${env}`),
-  path.join(targetDir, `.env.${env}`)
-);
+const envSource = path.join(rootDir, `.env.${env}`);
+const envDest = path.join(targetDir, `.env.${env}`);
+
+// Copy the env file first
+fs.copyFileSync(envSource, envDest);
+
+// If deploying dev environment to VPS, modify the env file
+if (env === 'dev') {
+  console.log('Preparing .env.dev file for VPS deployment...');
+  
+  let envContent = fs.readFileSync(envDest, 'utf8');
+  
+  // Replace localhost URLs with VPS URLs
+  envContent = envContent.replace(
+    /DISCORD_CALLBACK_URL=http:\/\/localhost:[0-9]+\/auth\/callback/,
+    'DISCORD_CALLBACK_URL=https://54.36.98.165/auth/callback'
+  );
+  
+  envContent = envContent.replace(
+    /WEB_URL=http:\/\/localhost/,
+    'WEB_URL=https://54.36.98.165'
+  );
+  
+  envContent = envContent.replace(
+    /API_ENDPOINT=http:\/\/localhost/,
+    'API_ENDPOINT=https://54.36.98.165'
+  );
+  
+  // Write modified content back to the env file
+  fs.writeFileSync(envDest, envContent);
+  console.log('ENV file modified for VPS environment');
+}
 
 // Merge package.json files from root and project
 console.log('Merging package.json files...');
