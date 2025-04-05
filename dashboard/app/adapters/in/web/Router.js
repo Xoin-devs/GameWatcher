@@ -42,7 +42,7 @@ class Router {
             scope: ['identify', 'guilds'] 
         }));
         
-        this.router.get('/auth/discord/callback', 
+        this.router.get('/auth/callback', 
             passport.authenticate('discord', { 
                 failureRedirect: '/login' 
             }),
