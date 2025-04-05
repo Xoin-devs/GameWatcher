@@ -81,7 +81,7 @@ if (env === 'dev') {
   
   envContent = envContent.replace(
     /API_ENDPOINT=http:\/\/localhost/,
-    'API_ENDPOINT=https://54.36.98.165'
+    'API_ENDPOINT=http://54.36.98.165'  // Changed from https to http
   );
   
   // Write modified content back to the env file
