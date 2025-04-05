@@ -87,6 +87,26 @@ if (env === 'dev') {
   // Write modified content back to the env file
   fs.writeFileSync(envDest, envContent);
   console.log('ENV file modified for VPS environment');
+  
+  // Modify ecosystem.config.js to add "-dev" to app name for dev builds
+  console.log('Modifying ecosystem.config.js to add "-dev" suffix to app name...');
+  const ecosystemPath = path.join(targetDir, 'ecosystem.config.js');
+  
+  if (fs.existsSync(ecosystemPath)) {
+    let ecosystemContent = fs.readFileSync(ecosystemPath, 'utf8');
+    
+    // Add "-dev" suffix to app name
+    ecosystemContent = ecosystemContent.replace(
+      /name: ['"]gamewatcher-[^'"]+['"]/g,
+      (match) => match.replace(/['"]$/, '-dev\'')
+    );
+    
+    // Write modified content back to the ecosystem file
+    fs.writeFileSync(ecosystemPath, ecosystemContent);
+    console.log('Ecosystem config modified to use dev app name');
+  } else {
+    console.log('Warning: ecosystem.config.js not found in target directory');
+  }
 }
 
 // Merge package.json files from root and project
