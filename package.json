@@ -31,7 +31,13 @@
     "build:bot:dev": "node scripts/build.js bot dev",
     "build:api:dev": "node scripts/build.js api dev",
     "build:dashboard:dev": "node scripts/build.js dashboard dev",
-    "build:all:dev": "npm run build:bot:dev && npm run build:api:dev && npm run build:dashboard:dev"
+    "build:all:dev": "npm run build:bot:dev && npm run build:api:dev && npm run build:dashboard:dev",
+    "deploy:bot:prod": "npm run build:bot:prod && node scripts/deployToVPS.js --project bot",
+    "deploy:api:prod": "npm run build:api:prod && node scripts/deployToVPS.js --project api",
+    "deploy:dashboard:prod": "npm run build:dashboard:prod && node scripts/deployToVPS.js --project dashboard",
+    "deploy:bot:dev": "npm run build:bot:dev && node scripts/deployToVPS.js --project bot",
+    "deploy:api:dev": "npm run build:api:dev && node scripts/deployToVPS.js --project api",
+    "deploy:dashboard:dev": "npm run build:dashboard:dev && node scripts/deployToVPS.js --project dashboard"
   },
   "dependencies": {
     "chalk": "^4.1.2",
