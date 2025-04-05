@@ -8,9 +8,14 @@
     "start:prod": "cross-env NODE_ENV=prod node src/server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "express-sanitizer": "^1.0.6",
+    "express-validator": "^7.2.1",
     "mariadb": "^3.4.0",
-    "cors": "^2.8.5"
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "cross-env": "^7.0.3"

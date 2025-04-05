@@ -2,7 +2,6 @@ const GameRepository = require('../../../core/domain/ports/out/GameRepository');
 const GameMapper = require('./GameMapper');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const logger = require('@shared/logger');
-const config = require('@shared/config');
 const { NotFoundError, ApplicationError } = require('../../../core/application/errors/ApplicationErrors');
 
 /**
@@ -22,7 +21,6 @@ class GameRepositoryImpl extends GameRepository {
      */
     async getGuildGames(guildId, page = 1, limit = 20, search = '', filter = '') {
         try {
-            // Updated URL to match the API's actual endpoint pattern
             let url = `${this.apiUrl}/guilds/${guildId}/games?page=${page}&limit=${limit}`;
             
             if (search) {
@@ -46,7 +44,7 @@ class GameRepositoryImpl extends GameRepository {
             const apiResponse = await response.json();
             
             // Transform API response to domain entities using the mapper
-            return GameMapper.apiResponseToDomain(apiResponse);
+            return GameMapper.apiResponseToDomain(apiResponse.data);
         } catch (error) {
             logger.error(`Error fetching guild games: ${error.message}`);
             throw error;
@@ -71,12 +69,12 @@ class GameRepositoryImpl extends GameRepository {
             }
             
             const stats = await response.json();
-            return stats;
+            return stats.data;
         } catch (error) {
             logger.error(`Error fetching guild game stats: ${error.message}`);
             
             // Return default stats if API doesn't support this endpoint yet
-            if (error.statusCode === 404) {
+            if (error.statusCode = 404) {
                 return { totalGames: 0, subscribedGames: 0 };
             }
             
@@ -89,13 +87,11 @@ class GameRepositoryImpl extends GameRepository {
      */
     async linkGameToGuild(guildId, gameId) {
         try {
-            // Updated to use the toggle endpoint with proper payload
             const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ subscribe: true })
+                }
             });
             
             if (response.status === 404) {
@@ -118,13 +114,11 @@ class GameRepositoryImpl extends GameRepository {
      */
     async unlinkGameFromGuild(guildId, gameId) {
         try {
-            // Updated to use the toggle endpoint with proper payload
             const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ subscribe: false })
+                }
             });
             
             if (response.status === 404) {
@@ -154,7 +148,7 @@ class GameRepositoryImpl extends GameRepository {
             }
             
             const guilds = await response.json();
-            return guilds;
+            return guilds.data;
         } catch (error) {
             logger.error(`Error fetching guilds: ${error.message}`);
             throw error;

@@ -25,19 +25,37 @@ class ApiClient {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            credentials: 'include'
+            // Don't use 'include' for credentials as it might be causing the storage access issue
+            // Use 'same-origin' for better security when API and dashboard are on same domain
+            credentials: 'same-origin'
         };
         
         const requestOptions = { ...defaultOptions, ...options };
         
         try {
+            console.log(`Making API request to: ${url}`, requestOptions);
             const response = await fetch(url, requestOptions);
             
             if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
             }
             
-            return await response.json();
+            const responseData = await response.json();
+            console.log(`API response for ${endpoint}:`, responseData);
+            
+            // Handle the new response format from the updated API
+            if (responseData && responseData.hasOwnProperty('success')) {
+                // New API format with success field
+                if (!responseData.success) {
+                    throw new Error(responseData.message || 'API request failed');
+                }
+                // Return just the data property from the standardized response
+                console.log(`Extracted data from API response:`, responseData.data);
+                return responseData.data;
+            }
+            
+            // If the response doesn't match the new format, return it as-is
+            return responseData;
         } catch (error) {
             console.error(`API request error for ${endpoint}:`, error);
             throw error;
