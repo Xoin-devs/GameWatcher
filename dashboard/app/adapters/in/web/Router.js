@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const GuildAuthMiddleware = require('./middleware/GuildAuthMiddleware');
 
 /**
  * Router class to handle all web routes in the application
@@ -9,12 +10,17 @@ class Router {
      * @param {import('./AuthController')} authController 
      * @param {import('./GuildController')} guildController 
      * @param {import('./GameController')} gameController
+     * @param {import('../../core/domain/ports/in/UserPort')} userService
+     * @param {import('../../core/domain/ports/in/GuildPort')} guildService
      */
-    constructor(authController, guildController, gameController) {
+    constructor(authController, guildController, gameController, userService, guildService) {
         this.router = express.Router();
         this.authController = authController;
         this.guildController = guildController;
         this.gameController = gameController;
+        
+        // Initialize the guild auth middleware
+        this.guildAuthMiddleware = new GuildAuthMiddleware(userService, guildService);
         
         this.setupRoutes();
     }
@@ -59,16 +65,19 @@ class Router {
         // Game routes - these are the only ones used by the frontend client
         this.router.get('/gnf/guilds/:guildId/games', 
             this.isAuthenticated,
+            this.guildAuthMiddleware.checkGuildPermission(),
             (req, res, next) => this.gameController.getGuildGames(req, res, next)
         );
         
         this.router.get('/gnf/guilds/:guildId/stats', 
             this.isAuthenticated,
+            this.guildAuthMiddleware.checkGuildPermission(),
             (req, res, next) => this.gameController.getGuildGameStats(req, res, next)
         );
         
         this.router.post('/gnf/guilds/:guildId/games/:gameId/toggle', 
             this.isAuthenticated,
+            this.guildAuthMiddleware.checkGuildPermission(),
             (req, res, next) => this.gameController.toggleGameSubscription(req, res, next)
         );
         

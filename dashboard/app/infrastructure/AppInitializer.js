@@ -7,6 +7,7 @@ const ErrorMiddleware = require('../adapters/in/web/ErrorMiddleware');
 const express = require('express');
 const path = require('path');
 const logger = require('@shared/logger');
+const config = require('@shared/config');
 
 /**
  * Application initializer to set up all components
@@ -56,6 +57,13 @@ class AppInitializer {
         this.app.set('views', path.join(__dirname, '../views'));
         this.app.use(express.static(path.join(__dirname, '../public')));
         
+        // Add environment variables to all views
+        this.app.use((req, res, next) => {
+            res.locals.isDev = config.isDev();
+            res.locals.isProd = config.isProd();
+            next();
+        });
+        
         // Serve images from the img directory
         this.app.use('/img', express.static(path.join(__dirname, '../img'), {
             index: false,  // Disable directory index generation
@@ -93,11 +101,13 @@ class AppInitializer {
      * Set up routes
      */
     setupRoutes() {
-        // Create and configure the router
+        // Create and configure the router with services for authorization
         const router = new Router(
             this.controllers.authController,
             this.controllers.guildController,
-            this.controllers.gameController
+            this.controllers.gameController,
+            this.services.userService,
+            this.services.guildService
         );
         
         // Use the configured router for all routes

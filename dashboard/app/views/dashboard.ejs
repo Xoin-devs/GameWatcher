@@ -6,8 +6,29 @@
     <meta name="theme-color" content="#171717">
     <title>Game News Forge Dashboard</title>
     <link rel="stylesheet" href="/css/dashboard.css">
+    <% if (isDev) { %>
+    <style>
+        .dev-banner {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background-color: #d30000;
+            color: white;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 9999;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 16px;
+            transform: rotate(5deg);
+        }
+    </style>
+    <% } %>
 </head>
 <body>
+    <% if (isDev) { %>
+    <div class="dev-banner">DEV</div>
+    <% } %>
     <nav class="navbar" role="navigation">
         <div class="navbar-container">
             <a class="navbar-brand" href="#">Game News Forge</a>

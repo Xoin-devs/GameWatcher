@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Game News Forge</title>
+    <% if (isDev) { %>
+    <style>
+        .dev-banner {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background-color: #d30000;
+            color: white;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            z-index: 9999;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 16px;
+            transform: rotate(5deg);
+        }
+    </style>
+    <% } %>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -126,6 +144,9 @@
     </style>
 </head>
 <body>
+    <% if (isDev) { %>
+    <div class="dev-banner">DEV</div>
+    <% } %>
     <div class="container">
         <img src="/img/game-news-forge-logo-light.png" alt="Game News Forge Logo" class="logo" onerror="this.style.display='none'">
         <h1>Game News Forge</h1>
