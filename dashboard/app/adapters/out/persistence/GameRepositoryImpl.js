@@ -14,6 +14,8 @@ class GameRepositoryImpl extends GameRepository {
         const api_port = process.env.API_PORT || 8080;
         const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
         this.apiUrl = `${api_endpoint}:${api_port}/api`;
+        
+        logger.debug(`GameRepository initialized with API URL: ${this.apiUrl}`);
     }
 
     /**

@@ -9,6 +9,7 @@ class ApiClient {
     constructor() {
         // Base URL for API requests, empty string means same origin
         this.baseUrl = '';
+        this.gatewayPrefix = '/gnf'; // Use the gateway prefix for dashboard backend routes
     }
 
     /**
@@ -18,7 +19,8 @@ class ApiClient {
      * @returns {Promise<any>} - Response data
      */
     async request(endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
+        // Use the gateway prefix instead of /api/
+        const url = `${this.baseUrl}${this.gatewayPrefix}${endpoint}`;
         
         const defaultOptions = {
             headers: {
@@ -66,7 +68,7 @@ class ApiClient {
      * @returns {Promise<Object>} - Game statistics
      */
     async getGuildStats(guildId) {
-        return this.request(`/api/guilds/${guildId}/stats`);
+        return this.request(`/guilds/${guildId}/stats`);
     }
 
     /**
@@ -79,7 +81,7 @@ class ApiClient {
      * @returns {Promise<Object>} - Games with pagination info
      */
     async getGuildGames(guildId, page = 1, limit = 20, search = '', filter = '') {
-        let url = `/api/guilds/${guildId}/games?page=${page}&limit=${limit}`;
+        let url = `/guilds/${guildId}/games?page=${page}&limit=${limit}`;
         
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
@@ -100,7 +102,7 @@ class ApiClient {
      * @returns {Promise<Object>} - Success response
      */
     async toggleGameSubscription(guildId, gameId, subscribe) {
-        return this.request(`/api/guilds/${guildId}/games/${gameId}/toggle`, {
+        return this.request(`/guilds/${guildId}/games/${gameId}/toggle`, {
             method: 'POST',
             body: JSON.stringify({ subscribe })
         });

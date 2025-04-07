@@ -55,30 +55,19 @@ class Router {
             (req, res, next) => this.guildController.renderDashboard(req, res, next)
         );
         
-        // API Routes
-        // Guild routes
-        this.router.get('/api/guilds', 
-            this.isAuthenticated,
-            (req, res, next) => this.guildController.getAllGuilds(req, res, next)
-        );
-        
-        this.router.get('/api/guilds/:guildId', 
-            this.isAuthenticated,
-            (req, res, next) => this.guildController.getGuildDetails(req, res, next)
-        );
-        
-        // Game routes
-        this.router.get('/api/guilds/:guildId/games', 
+        // Dashboard API Routes with /gnf/ prefix - only the ones actually used by the frontend
+        // Game routes - these are the only ones used by the frontend client
+        this.router.get('/gnf/guilds/:guildId/games', 
             this.isAuthenticated,
             (req, res, next) => this.gameController.getGuildGames(req, res, next)
         );
         
-        this.router.get('/api/guilds/:guildId/stats', 
+        this.router.get('/gnf/guilds/:guildId/stats', 
             this.isAuthenticated,
             (req, res, next) => this.gameController.getGuildGameStats(req, res, next)
         );
         
-        this.router.post('/api/guilds/:guildId/games/:gameId/toggle', 
+        this.router.post('/gnf/guilds/:guildId/games/:gameId/toggle', 
             this.isAuthenticated,
             (req, res, next) => this.gameController.toggleGameSubscription(req, res, next)
         );
