@@ -100,8 +100,7 @@ class GameList {
             </div>
         `;
     }
-    
-    /**
+      /**
      * Create source chips HTML
      * @param {Array} sources - Source objects
      * @returns {string} - HTML for source chips
@@ -118,6 +117,7 @@ class GameList {
         sources.forEach(sourceObj => {
             // Get the source type directly from the Source entity's type property
             const sourceKey = sourceObj.type;
+            const sourceId = sourceObj.sourceId;
             
             const sourceInfo = formatters.getSourceInfo(sourceKey);
             
@@ -125,7 +125,37 @@ class GameList {
             const dedupeKey = sourceInfo.label.toLowerCase();
             
             // Only add this source if we haven't added it already
-            if (!addedSources.has(dedupeKey)) {
+            if (!addedSources.has(dedupeKey) && sourceId) {
+                addedSources.add(dedupeKey);
+                
+                // Generate the appropriate URL based on source type
+                let sourceUrl = '#';
+                
+                if (sourceKey.toLowerCase().includes('steam')) {
+                    // Steam store page
+                    sourceUrl = `https://store.steampowered.com/app/${sourceId}`;
+                } else if (sourceKey.toLowerCase() === 'twitter') {
+                    // Twitter profile or tweet
+                    if (sourceId.includes('/status/')) {
+                        // It's a specific tweet
+                        sourceUrl = `https://twitter.com/${sourceId}`;
+                    } else {
+                        // It's a profile
+                        sourceUrl = `https://twitter.com/${sourceId}`;
+                    }
+                } else if (['pcgamer', 'pcgamesn', 'rps', 'vg247'].includes(sourceKey.toLowerCase())) {
+                    // News article - assuming sourceId is the article URL
+                    sourceUrl = sourceId;
+                }
+                
+                chips.push(
+                    `<a href="${sourceUrl}" class="source-chip ${sourceInfo.class}" 
+                        target="_blank" rel="noopener noreferrer" 
+                        title="View on ${sourceInfo.label}"
+                        onclick="event.stopPropagation();">${sourceInfo.label}</a>`
+                );
+            } else if (!addedSources.has(dedupeKey)) {
+                // No sourceId available, add as non-clickable
                 addedSources.add(dedupeKey);
                 chips.push(`<span class="source-chip ${sourceInfo.class}">${sourceInfo.label}</span>`);
             }
@@ -266,13 +296,19 @@ class GameList {
                 onPageChange(newPage);
             });
         });
-        
-        // Game cards
+          // Game cards
         this.container.querySelectorAll('.game-card').forEach(card => {
             // Click handler
             card.addEventListener('click', (e) => {
                 // Don't trigger if clicking directly on the checkbox
                 if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+                    return;
+                }
+                
+                // Don't trigger if clicking on a source chip or source chip link
+                if (e.target.classList.contains('source-chip') || 
+                    (e.target.parentElement && e.target.parentElement.classList.contains('source-chip')) ||
+                    e.target.closest('.source-chip')) {
                     return;
                 }
                 
