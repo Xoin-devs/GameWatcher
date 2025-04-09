@@ -15,6 +15,9 @@ const requestLogger = require('./utils/requestLogger');
 
 const app = express();
 
+// Configure Express to trust proxy headers (important when behind Nginx)
+app.set('trust proxy', 1);
+
 // Enhanced CORS configuration from centralized config
 const corsOptions = {
     origin: config.corsOrigins,

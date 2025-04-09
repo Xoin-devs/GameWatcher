@@ -11,6 +11,12 @@ const axios = require('axios');
 const getApiBaseUrl = () => {
     const api_port = process.env.API_PORT || 8080;
     const api_endpoint = process.env.API_ENDPOINT || 'http://localhost';
+    
+    // For production with custom domain, don't add port to the URL
+    if (api_endpoint.includes('https://') && !api_endpoint.includes('localhost')) {
+        return api_endpoint;
+    }
+    
     return `${api_endpoint}:${api_port}`;
 };
 
@@ -25,6 +31,9 @@ class ApiSessionStore extends session.Store {
         // Add caching to reduce API calls
         this.cache = new Map();
         this.cacheTTL = options.cacheTTL || 60000; // Default: 1 minute cache
+        
+        // Add in-flight request tracking to prevent duplicate simultaneous requests
+        this.pendingRequests = new Map();
         
         logger.info(`API Session Store initialized with endpoint: ${this.apiBaseUrl} (cache TTL: ${this.cacheTTL}ms)`);
         
@@ -172,8 +181,7 @@ class ApiSessionStore extends session.Store {
         
         throw lastError || new Error('Failed to connect to API');
     }
-    
-    /**
+      /**
      * Get session data
      * @param {string} sessionId - Session ID
      * @param {Function} callback - Callback function(error, session)
@@ -187,15 +195,37 @@ class ApiSessionStore extends session.Store {
             return callback(null, cachedSession);
         }
         
+        // Check if there's already a request in progress for this session ID
+        if (this.pendingRequests.has(sessionId)) {
+            // Add this callback to the pending request's callbacks
+            const pendingRequest = this.pendingRequests.get(sessionId);
+            pendingRequest.callbacks.push(callback);
+            logger.debug(`Added callback to pending request for session: ${sessionId}`);
+            return;
+        }
+        
+        // Create new pending request entry with initial callback
+        this.pendingRequests.set(sessionId, {
+            callbacks: [callback],
+            timestamp: Date.now()
+        });
+        
         // Pass true as the third parameter to allow 404 responses
         this.fetchWithRetry(`${this.apiBaseUrl}/api/sessions/${sessionId}`, {
             method: 'GET'
         }, true)
         .then(response => {
+            // Get all callbacks waiting for this session
+            const { callbacks } = this.pendingRequests.get(sessionId) || { callbacks: [] };
+            // Remove from pending requests
+            this.pendingRequests.delete(sessionId);
+            
             // If we got a 404, just return null (no session found)
             if (response.status === 404 || !response.data) {
                 logger.debug(`Session not found: ${sessionId}`);
-                return callback(null, null);
+                // Call all callbacks with null session
+                callbacks.forEach(cb => cb(null, null));
+                return;
             }
             
             // Otherwise process the successful response
@@ -205,20 +235,28 @@ class ApiSessionStore extends session.Store {
                     const sessionData = JSON.parse(response.data.data.data);
                     // Cache the session data
                     this.setCache(sessionId, sessionData);
-                    callback(null, sessionData);
+                    // Call all callbacks with the session data
+                    callbacks.forEach(cb => cb(null, sessionData));
                 } catch (error) {
                     logger.error(`Failed to parse session data: ${error.message}`);
-                    callback(error);
+                    // Call all callbacks with the error
+                    callbacks.forEach(cb => cb(error));
                 }
             } else {
                 // Session not found or invalid data
-                callback(null, null);
+                callbacks.forEach(cb => cb(null, null));
             }
         })
         .catch(error => {
+            // Get all callbacks waiting for this session
+            const { callbacks } = this.pendingRequests.get(sessionId) || { callbacks: [] };
+            // Remove from pending requests
+            this.pendingRequests.delete(sessionId);
+            
             // Only true errors should reach here now (not 404)
             logger.error(`Error retrieving session ${sessionId}: ${error.message}`);
-            callback(error);
+            // Call all callbacks with the error
+            callbacks.forEach(cb => cb(error));
         });
     }
     

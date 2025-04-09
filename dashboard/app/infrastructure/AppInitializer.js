@@ -29,12 +29,13 @@ class AppInitializer {
         this.setupDependencies();
         this.setupRoutes();
         this.setupErrorHandling();
-    }
-
-    /**
+    }    /**
      * Set up middleware
      */
     setupMiddleware() {
+        // Configure Express to trust proxy headers (important when behind Nginx)
+        this.app.set('trust proxy', 1);
+        
         // Setup security config
         const securityConfig = new SecurityConfig(this.app);
         securityConfig.init();

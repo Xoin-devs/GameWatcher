@@ -10,22 +10,31 @@ const config = require('@shared/config');
  */
 function getSessionCookieConfig() {
     const isProduction = config.isProd();
-    
-    const cookieConfig = {
+      const cookieConfig = {
         httpOnly: true,
         maxAge: parseInt(process.env.SESSION_MAX_AGE || 604800000, 10), // 7 days by default
-        sameSite: 'lax'
+        sameSite: 'none' // Changed from 'lax' to 'none' to support cross-site authentication
     };
     
     // Only use secure cookies in production
     if (isProduction) {
         logger.info('Production environment detected - using secure cookies');
         cookieConfig.secure = true;
+        
+        // Add domain setting for production to ensure cookies work across subdomains
+        const domain = process.env.COOKIE_DOMAIN || 'oslo.ovh';
+        if (!domain) {
+            logger.error('COOKIE_DOMAIN is not set in production!');
+        } else {
+            logger.info(`Setting cookie domain to: ${domain}`);
+            cookieConfig.domain = domain;
+        }
     } else {
         logger.info('Development environment detected - NOT using secure cookies');
         cookieConfig.secure = false;
     }
     
+    logger.debug('Cookie configuration:', cookieConfig);
     return cookieConfig;
 }
 
