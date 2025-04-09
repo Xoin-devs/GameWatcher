@@ -1,6 +1,7 @@
 const app = require('./app');
 const logger = require('@shared/logger');
 const config = require('./config');
+const SessionCleanup = require('./utils/sessionCleanup');
 
 /**
  * Handles uncaught exceptions to prevent app crash
@@ -30,6 +31,8 @@ const PORT = config.port;
  */
 const server = app.listen(PORT, () => {
     logger.info(`API server running on port ${PORT} in ${config.nodeEnv} mode`);
+    // Initialize the session cleanup task
+    SessionCleanup.init();
 });
 
 /**
@@ -49,6 +52,11 @@ server.on('error', (error) => {
  */
 const shutdown = () => {
     logger.info('Shutting down API server...');
+    
+    // Stop the session cleanup task
+    SessionCleanup.stop();
+    logger.info('Session cleanup stopped');
+    
     server.close(() => {
         logger.info('API server closed');
         process.exit(0);

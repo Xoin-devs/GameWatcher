@@ -27,6 +27,22 @@ const config = {
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || '',
         database: process.env.DB_NAME || 'mydatabase',
+    },
+    
+    // Session configuration
+    session: {
+        secret: process.env.SESSION_SECRET || 'default-secret-key-change-in-production',
+        cookie: {
+            // Secure cookies in production only (requires HTTPS)
+            secure: sharedConfig.isProd(),
+            httpOnly: true,
+            maxAge: parseInt(process.env.SESSION_MAX_AGE || 604800000, 10), // 7 days by default
+            sameSite: 'lax'
+        },
+        resave: false,
+        saveUninitialized: false,
+        // Database sessions cleaning interval (in milliseconds)
+        cleanupInterval: parseInt(process.env.SESSION_CLEANUP_INTERVAL || 3600000, 10) // 1 hour by default
     }
 };
 
@@ -37,7 +53,9 @@ logger.debug('API Configuration:', {
     corsOrigins: config.corsOrigins,
     dbHost: config.db.host,
     dbName: config.db.database,
-    isProd: config.isProd()
+    isProd: config.isProd(),
+    sessionMaxAge: config.session.cookie.maxAge,
+    sessionSecure: config.session.cookie.secure
 });
 
 module.exports = config;

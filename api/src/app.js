@@ -6,6 +6,7 @@ const expressSanitizer = require('express-sanitizer');
 const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 const gameRoutes = require('./routes/gameRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
 const logger = require('@shared/logger');
 const config = require('./config');
 const swaggerSpec = require('./config/swagger');
@@ -65,6 +66,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 // Routes
 app.use('/api', gameRoutes);
+app.use('/api', sessionRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

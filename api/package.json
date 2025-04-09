@@ -11,12 +11,12 @@
     "test:unit": "cross-env NODE_ENV=test jest --testMatch=\"**/tests/unit/**/*.test.js\"",
     "test:integration": "cross-env NODE_ENV=test jest --testMatch=\"**/tests/integration/**/*.test.js\"",
     "test:e2e": "cross-env NODE_ENV=test jest --testMatch=\"**/tests/e2e/**/*.test.js\""
-  },
-  "dependencies": {
+  },  "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-sanitizer": "^1.0.6",
+    "express-session": "^1.18.1",
     "express-validator": "^7.2.1",
     "mariadb": "^3.4.0",
     "swagger-jsdoc": "^6.2.8",

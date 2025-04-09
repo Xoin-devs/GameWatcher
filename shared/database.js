@@ -87,6 +87,16 @@ class DatabaseManager {
                 FOREIGN KEY (guild_id) REFERENCES guilds(id) ON DELETE CASCADE,
                 FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE,
                 PRIMARY KEY (guild_id, game_id)
+            );`,
+            
+            // Sessions table for express-session
+            `CREATE TABLE IF NOT EXISTS sessions (
+                session_id VARCHAR(128) PRIMARY KEY,
+                expires BIGINT NOT NULL,
+                data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX (expires)
             );`
         ];
         
@@ -677,6 +687,84 @@ class DatabaseManager {
             JOIN games g ON gg.game_id = g.id
             WHERE g.name = ?
         `, [gameName], `Error fetching guilds for game ${gameName}`);
+    }
+
+    // Session methods
+    async getSession(sessionId) {
+        try {
+            const rows = await this._safeQuery(
+                'SELECT * FROM sessions WHERE session_id = ? AND expires > ?',
+                [sessionId, Date.now()],
+                `Error getting session ${sessionId}`
+            );
+            
+            return rows.length === 0 ? null : {
+                id: rows[0].session_id,
+                expires: rows[0].expires,
+                data: rows[0].data
+            };
+        } catch (error) {
+            logger.error(`Error getting session ${sessionId}: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async setSession(sessionId, data, maxAge) {
+        const expires = Date.now() + maxAge;
+        
+        try {
+            await this._safeQuery(
+                'INSERT INTO sessions (session_id, data, expires) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data), expires = VALUES(expires)',
+                [sessionId, data, expires],
+                `Error setting session ${sessionId}`
+            );
+            return true;
+        } catch (error) {
+            logger.error(`Error setting session ${sessionId}: ${error.message}`);
+            return false;
+        }
+    }
+    
+    async destroySession(sessionId) {
+        try {
+            await this._safeQuery(
+                'DELETE FROM sessions WHERE session_id = ?',
+                [sessionId],
+                `Error destroying session ${sessionId}`
+            );
+            return true;
+        } catch (error) {
+            logger.error(`Error destroying session ${sessionId}: ${error.message}`);
+            return false;
+        }
+    }
+    
+    async getAllSessions() {
+        try {
+            return await this._safeQuery(
+                'SELECT * FROM sessions WHERE expires > ?',
+                [Date.now()],
+                'Error getting all sessions'
+            );
+        } catch (error) {
+            logger.error(`Error getting all sessions: ${error.message}`);
+            return [];
+        }
+    }
+    
+    async clearExpiredSessions() {
+        try {
+            const result = await this._safeQuery(
+                'DELETE FROM sessions WHERE expires <= ?',
+                [Date.now()],
+                'Error clearing expired sessions'
+            );
+            logger.debug(`Cleared ${result.affectedRows} expired sessions`);
+            return result.affectedRows || 0;
+        } catch (error) {
+            logger.error(`Error clearing expired sessions: ${error.message}`);
+            return 0;
+        }
     }
 
     // Cleanup
