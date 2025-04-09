@@ -1,6 +1,6 @@
 const GameRepository = require('../../../core/domain/ports/out/GameRepository');
 const GameMapper = require('./GameMapper');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const axios = require('axios');
 const logger = require('@shared/logger');
 const { NotFoundError, ApplicationError } = require('../../../core/application/errors/ApplicationErrors');
 
@@ -33,21 +33,17 @@ class GameRepositoryImpl extends GameRepository {
                 url += `&filter=${encodeURIComponent(filter)}`;
             }
             
-            const response = await fetch(url);
-            
-            if (response.status === 404) {
-                throw new NotFoundError(`Guild with ID ${guildId} not found`);
-            }
-            
-            if (!response.ok) {
-                throw new ApplicationError(`API responded with status: ${response.status}`);
-            }
-            
-            const apiResponse = await response.json();
+            const response = await axios.get(url);
             
             // Transform API response to domain entities using the mapper
-            return GameMapper.apiResponseToDomain(apiResponse.data);
+            return GameMapper.apiResponseToDomain(response.data.data);
         } catch (error) {
+            if (error.response) {
+                if (error.response.status === 404) {
+                    throw new NotFoundError(`Guild with ID ${guildId} not found`);
+                }
+                throw new ApplicationError(`API responded with status: ${error.response.status}`);
+            }
             logger.error(`Error fetching guild games: ${error.message}`);
             throw error;
         }
@@ -60,26 +56,18 @@ class GameRepositoryImpl extends GameRepository {
         try {
             const url = `${this.apiUrl}/guilds/${guildId}/stats`;
             
-            const response = await fetch(url);
+            const response = await axios.get(url);
             
-            if (response.status === 404) {
-                throw new NotFoundError(`Stats API url not found, please check if the API supports this endpoint`);
-            }
-            
-            if (!response.ok) {
-                throw new ApplicationError(`API responded with status: ${response.status}`);
-            }
-            
-            const stats = await response.json();
-            return stats.data;
+            return response.data.data;
         } catch (error) {
-            logger.error(`Error fetching guild game stats: ${error.message}`);
-            
-            // Return default stats if API doesn't support this endpoint yet
-            if (error.statusCode = 404) {
-                return { totalGames: 0, subscribedGames: 0 };
+            if (error.response) {
+                if (error.response.status === 404) {
+                    logger.error(`Stats API url not found, please check if the API supports this endpoint`);
+                    return { totalGames: 0, subscribedGames: 0 };
+                }
+                throw new ApplicationError(`API responded with status: ${error.response.status}`);
             }
-            
+            logger.error(`Error fetching guild game stats: ${error.message}`);
             throw error;
         }
     }
@@ -89,23 +77,16 @@ class GameRepositoryImpl extends GameRepository {
      */
     async linkGameToGuild(guildId, gameId) {
         try {
-            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.status === 404) {
-                throw new NotFoundError(`Guild or game not found`);
-            }
-            
-            if (!response.ok) {
-                throw new ApplicationError(`API responded with status: ${response.status}`);
-            }
+            const response = await axios.post(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`);
             
             return true;
         } catch (error) {
+            if (error.response) {
+                if (error.response.status === 404) {
+                    throw new NotFoundError(`Guild or game not found`);
+                }
+                throw new ApplicationError(`API responded with status: ${error.response.status}`);
+            }
             logger.error(`Error linking game to guild: ${error.message}`);
             throw error;
         }
@@ -116,23 +97,16 @@ class GameRepositoryImpl extends GameRepository {
      */
     async unlinkGameFromGuild(guildId, gameId) {
         try {
-            const response = await fetch(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.status === 404) {
-                throw new NotFoundError(`Guild or game not found`);
-            }
-            
-            if (!response.ok) {
-                throw new ApplicationError(`API responded with status: ${response.status}`);
-            }
+            const response = await axios.post(`${this.apiUrl}/guilds/${guildId}/games/${gameId}/toggle`);
             
             return true;
         } catch (error) {
+            if (error.response) {
+                if (error.response.status === 404) {
+                    throw new NotFoundError(`Guild or game not found`);
+                }
+                throw new ApplicationError(`API responded with status: ${error.response.status}`);
+            }
             logger.error(`Error unlinking game from guild: ${error.message}`);
             throw error;
         }
@@ -143,15 +117,13 @@ class GameRepositoryImpl extends GameRepository {
      */
     async getGuilds() {
         try {
-            const response = await fetch(`${this.apiUrl}/guilds`);
+            const response = await axios.get(`${this.apiUrl}/guilds`);
             
-            if (!response.ok) {
-                throw new ApplicationError(`API responded with status: ${response.status}`);
-            }
-            
-            const guilds = await response.json();
-            return guilds.data;
+            return response.data.data;
         } catch (error) {
+            if (error.response) {
+                throw new ApplicationError(`API responded with status: ${error.response.status}`);
+            }
             logger.error(`Error fetching guilds: ${error.message}`);
             throw error;
         }
