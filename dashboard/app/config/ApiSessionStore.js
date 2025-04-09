@@ -4,8 +4,8 @@
 const session = require('express-session');
 const logger = require('@shared/logger');
 const config = require('@shared/config');
-// Use node-fetch with CommonJS compatibility
-const { default: fetch } = require('node-fetch');
+// Use axios instead of node-fetch
+const axios = require('axios');
 
 // Use a consistent API URL based on environment
 const getApiBaseUrl = () => {
@@ -99,11 +99,10 @@ class ApiSessionStore extends session.Store {
     deleteCache(key) {
         this.cache.delete(key);
     }
-    
-    /**
+      /**
      * Fetch wrapper with retries and error handling
      * @param {string} url - URL to fetch
-     * @param {Object} options - Fetch options
+     * @param {Object} options - Axios request options
      * @param {boolean} allow404 - Whether to treat 404 as a valid response instead of an error
      * @returns {Promise<{ok: boolean, status: number, data: Object|null}>} Response result
      */
@@ -113,42 +112,57 @@ class ApiSessionStore extends session.Store {
         
         while (attempts < this.retryLimit) {
             try {
-                const response = await fetch(url, {
-                    ...options,
+                // Convert fetch-style options to axios format
+                const axiosOptions = {
+                    url,
+                    method: options.method || 'GET',
                     timeout: this.requestTimeout,
                     headers: {
                         'Content-Type': 'application/json',
                         ...options.headers
+                    },
+                    validateStatus: status => {
+                        // If allow404 is true, treat 404 as a successful response
+                        if (allow404 && status === 404) {
+                            return true;
+                        }
+                        return status >= 200 && status < 300;
                     }
-                });
+                };
                 
-                // Special case: if 404 is allowed, don't treat it as an error
+                // Handle request body for POST/PUT requests
+                if (options.body) {
+                    axiosOptions.data = JSON.parse(options.body);
+                }
+                
+                const response = await axios(axiosOptions);
+                
+                // Special case for 404 when allowed
                 if (allow404 && response.status === 404) {
-                    return { 
-                        ok: true, 
-                        status: 404, 
-                        data: null 
+                    return {
+                        ok: true,
+                        status: 404,
+                        data: null
                     };
                 }
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`API responded with status ${response.status}: ${errorText}`);
-                }
-                
-                const data = await response.json();
-                return { 
-                    ok: true, 
-                    status: response.status, 
-                    data 
+                return {
+                    ok: true,
+                    status: response.status,
+                    data: response.data
                 };
             } catch (error) {
                 lastError = error;
                 attempts++;
-                logger.warn(`API session store fetch failed (attempt ${attempts}): ${error.message}`);
+                
+                const errorMessage = error.response 
+                    ? `API responded with status ${error.response.status}: ${JSON.stringify(error.response.data)}`
+                    : error.message;
+                    
+                logger.warn(`API session store fetch failed (attempt ${attempts}): ${errorMessage}`);
                 
                 // Only retry on network errors, not HTTP errors
-                if (!error.message.includes('API responded with status')) {
+                if (!error.response) {
                     await new Promise(resolve => setTimeout(resolve, 500 * attempts));
                 } else {
                     break;
