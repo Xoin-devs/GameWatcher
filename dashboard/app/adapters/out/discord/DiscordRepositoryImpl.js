@@ -5,6 +5,50 @@ const logger = require('@shared/logger');
 const { ApplicationError, UnauthorizedError } = require('../../../core/application/errors/ApplicationErrors');
 
 /**
+ * Simple token bucket rate limiter for Discord API requests
+ */
+class RateLimiter {
+    constructor(tokensPerInterval = 5, interval = 5000, maxTokens = 5) {
+        this.tokens = maxTokens;
+        this.maxTokens = maxTokens; 
+        this.tokensPerInterval = tokensPerInterval;
+        this.interval = interval;
+        this.lastRefill = Date.now();
+        this.waiting = [];
+        
+        // Start token refill process
+        setInterval(() => this.refillTokens(), interval);
+    }
+    
+    refillTokens() {
+        this.tokens = Math.min(this.maxTokens, this.tokens + this.tokensPerInterval);
+        this.lastRefill = Date.now();
+        
+        // Process waiting consumers if any
+        while (this.waiting.length > 0 && this.tokens > 0) {
+            const resolve = this.waiting.shift();
+            this.tokens--;
+            resolve();
+        }
+    }
+    
+    async consume() {
+        if (this.tokens > 0) {
+            this.tokens--;
+            return true;
+        }
+        
+        // No tokens available, wait for refill
+        return new Promise(resolve => {
+            this.waiting.push(resolve);
+        });
+    }
+}
+
+// Singleton instance of rate limiter shared by all requests
+const discordApiLimiter = new RateLimiter(5, 5000, 5);
+
+/**
  * Implementation of DiscordRepository that connects to the Discord API
  */
 class DiscordRepositoryImpl extends DiscordRepository {
@@ -13,6 +57,7 @@ class DiscordRepositoryImpl extends DiscordRepository {
      */
     constructor() {
         super();
+        this.rateLimiter = discordApiLimiter;
     }
 
     /**
