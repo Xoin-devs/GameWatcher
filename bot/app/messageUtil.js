@@ -128,11 +128,9 @@ class MessageUtil {
                     builder.closeBlock();
                 },
                 'steamLink': function (elem, walk, builder, formatOptions) {
-                    builder.openBlock();
                     builder.addInline('[');
                     walk(elem.children, builder);
                     builder.addInline('](' + elem.attribs.href + ')');
-                    builder.closeBlock();
                 },
                 'basicURL': function (elem, walk, builder, formatOptions) {
                     builder.addInline('[');
@@ -151,6 +149,14 @@ class MessageUtil {
                 { selector: 'u', format: 'underline' },
                 { selector: 'iframe', format: 'iframe' }
             ]
+        });
+
+        // Remove false URL links; e.g., [Dune Awakening](/dune-awakening)
+        const regex = /\[(.*?)\]\((\/[^\s)]+)\)/g;
+        text.replace(regex, (match, p1, p2) => {
+            if (p2.startsWith('/')) {
+                text = text.replace(match, p1);
+            }
         });
 
         // Clean up any excessive whitespace
