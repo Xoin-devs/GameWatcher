@@ -39,6 +39,30 @@ router.get('/guilds', gameController.getGuilds);
 
 /**
  * @swagger
+ * /guilds:
+ *   get:
+ *     summary: Retrieve all guilds
+ *     description: Get a list of all Discord guilds using the bot
+ *     tags: [Guilds]
+ *     responses:
+ *       200:
+ *         description: A list of guilds
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Success'
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Guild'
+ */
+router.get('/games', gameController.getAllGames);
+
+/**
+ * @swagger
  * /guilds/{guildId}:
  *   get:
  *     summary: Get guild details
