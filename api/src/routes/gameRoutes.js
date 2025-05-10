@@ -39,14 +39,14 @@ router.get('/guilds', gameController.getGuilds);
 
 /**
  * @swagger
- * /guilds:
+ * /games:
  *   get:
- *     summary: Retrieve all guilds
- *     description: Get a list of all Discord guilds using the bot
- *     tags: [Guilds]
+ *     summary: Retrieve all games
+ *     description: Get a list of all Discord games tracked by the bot
+ *     tags: [Games]
  *     responses:
  *       200:
- *         description: A list of guilds
+ *         description: A list of games
  *         content:
  *           application/json:
  *             schema:
@@ -57,7 +57,7 @@ router.get('/guilds', gameController.getGuilds);
  *                     data:
  *                       type: array
  *                       items:
- *                         $ref: '#/components/schemas/Guild'
+ *                         $ref: '#/components/schemas/Game'
  */
 router.get('/games', gameController.getAllGames);
 

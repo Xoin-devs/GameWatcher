@@ -6,7 +6,6 @@ const sharedConfig = require('@shared/config');
 const logger = require('@shared/logger');
 
 // Ensure the shared config is loaded first (which loads environment variables)
-console.log(process.env.DB_USER);
 const config = {
     // Server configuration
     port: process.env.API_PORT || 8473,
