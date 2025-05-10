@@ -54,6 +54,14 @@ class GameController {
         }, req, res, next);
     }
 
+    static async getAllGames(req, res, next) {
+        await BaseController.executeHandler(async () => {
+            const guild = await GameService.getGames();
+
+            res.sendSuccess(guild, 'Guild details retrieved successfully');
+        }, req, res, next);
+    }
+
     /**
      * Get games with subscription status for a guild
      */
@@ -120,6 +128,7 @@ class GameController {
 
 module.exports = {
     getGuilds: (req, res, next) => GameController.getGuilds(req, res, next),
+    getAllGames: (req, res, next) => GameController.getAllGames(req, res, next),
     getGuildDetails: (req, res, next) => GameController.getGuildDetails(req, res, next),
     getGamesWithSubscriptionStatus: (req, res, next) => GameController.getGamesWithSubscriptionStatus(req, res, next),
     getGuildGameStats: (req, res, next) => GameController.getGuildGameStats(req, res, next),
