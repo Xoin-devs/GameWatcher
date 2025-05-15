@@ -36,11 +36,81 @@ class ReleaseManager {
     
     async checkReleases() {
         try {
+            await this.checkChangedReleaseDates();
             await this.getMissingReleaseDates();
             await this.checkTodayReleases();
             await this.checkUpcomingReleases();
         } catch (error) {
             logger.error(`Error during release checks: ${error.message}`);
+        }
+    }
+
+    async checkChangedReleaseDates() {
+        try {
+            logger.info('Checking for games with changed release dates');
+            const db = await DatabaseManager.getInstance();
+            const upcomingGames = await db.getUpcomingGames();
+            
+            if (upcomingGames.length === 0) {
+                logger.info('No upcoming games found to check for date changes');
+                return;
+            }
+            
+            logger.debug(`Checking ${upcomingGames.length} upcoming games for potential date changes`);
+            
+            for (const game of upcomingGames) {
+                let steamAppId = null;
+                
+                // Skip games without a release date
+                if (!game.releaseDate) {
+                    continue;
+                }
+                
+                // Extract Steam AppID if available
+                if (game.sources && game.sources.length > 0) {
+                    for (const source of game.sources) {
+                        if (source.steam_internal) {
+                            steamAppId = source.steam_internal;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!steamAppId) {
+                    logger.debug(`Game ${game.name} has no Steam AppID, skipping date change check`);
+                    continue;
+                }
+                
+                try {
+                    logger.debug(`Checking current release date for ${game.name} (AppID: ${steamAppId})`);
+                    const currentReleaseDate = await getSteamGameReleaseDate(steamAppId);
+                    
+                    if (!currentReleaseDate) {
+                        logger.debug(`No release date found for ${game.name}`);
+                        continue;
+                    }
+                    
+                    // Format dates for comparison
+                    const formattedCurrentDate = `${currentReleaseDate.getFullYear()}-${(currentReleaseDate.getMonth() + 1).toString().padStart(2, '0')}-${currentReleaseDate.getDate().toString().padStart(2, '0')}`;
+                    const storedDate = new Date(game.releaseDate);
+                    
+                    // Check if the game's release date has changed
+                    if (formattedCurrentDate !== game.releaseDate) {
+                        const dateChanged = currentReleaseDate > storedDate ? 'moved back' : 'moved forward';
+                        logger.info(`Game "${game.name}" release date has ${dateChanged} from ${game.releaseDate} to ${formattedCurrentDate}`);
+                        
+                        // Update the release date in the database
+                        await db.updateGameReleaseDate(game.id, formattedCurrentDate);
+                        
+                        // Send date change notification
+                        this.sendDateChangeMessage(game, game.releaseDate, formattedCurrentDate);
+                    }
+                } catch (error) {
+                    logger.error(`Error checking date changes for ${game.name}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            logger.error(`Error checking for release date changes: ${error.message}`);
         }
     }
 
@@ -185,6 +255,12 @@ class ReleaseManager {
     sendTeaseMessage(game) {
         logger.info(`Sending release teaser for ${game.name}`);
         MessageUtil.sendGameReleaseTeaseToAllGuilds(game);
+    }
+    
+    // Add a new method to send date change messages
+    sendDateChangeMessage(game, oldDate, newDate) {
+        logger.info(`Sending release date change notification for ${game.name} (${oldDate} → ${newDate})`);
+        MessageUtil.sendGameDateChangeToAllGuilds(game, oldDate, newDate);
     }
     
     stop() {

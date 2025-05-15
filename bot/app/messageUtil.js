@@ -249,6 +249,54 @@ class MessageUtil {
         }
     }
 
+    // Release date change notification method
+    static async sendGameDateChangeToAllGuilds(game, oldDate, newDate) {
+        try {
+            const db = await DatabaseManager.getInstance();
+            const guilds = await db.getGuildsForGame(game.name);
+            const gameName = game.name;
+
+            if (!guilds || guilds.length === 0) {
+                logger.warn(`No guilds found for game ${gameName}`);
+                return;
+            }
+
+            logger.info(`Sending release date change notification for ${gameName} to ${guilds.length} guilds`);
+
+            // Format dates for better display
+            const oldDateFormatted = new Date(oldDate).toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+            
+            const newDateFormatted = new Date(newDate).toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            for (const guild of guilds) {
+                try {
+                    const embed = this.buildGameDateChangeEmbed(gameName, oldDateFormatted, newDateFormatted);
+                    const messageContent = `[Update] ${gameName} release date has changed!`;
+
+                    if (guild.webhook_url) {
+                        await this.sendToWebhook(guild.webhook_url, { content: messageContent, embeds: [embed] });
+                    } else if (guild.channel_id) {
+                        await this.sendToChannel(guild.channel_id, { content: messageContent, embeds: [embed] });
+                    } else {
+                        logger.warn(`No webhook URL or channel ID for guild ${guild.id}`);
+                    }
+                } catch (error) {
+                    logger.error(`Failed to send date change notification for ${gameName} to guild ${guild.id}: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            logger.error(`Error in sendGameDateChangeToAllGuilds: ${error.message}`);
+        }
+    }
+
     static buildGameReleaseEmbed(gameName) {
         return new EmbedBuilder()
             .setTitle(`🔥 ${gameName} is Live!`)
@@ -270,6 +318,30 @@ class MessageUtil {
             .setDescription(`Hold on tight! **${gameName}** will be launching on ${formattedDate}.\nStay tuned for more updates!`)
             .setColor(PrettyColors.ORANGE)
             .setFooter({ text: 'Get hyped!' })
+            .setTimestamp();
+    }
+
+    static buildGameDateChangeEmbed(gameName, oldDate, newDate) {
+        // Determine if it's a delay or advancement
+        const newDateObj = new Date(newDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+        const oldDateObj = new Date(oldDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
+        
+        let changeType, color, emoji;
+        if (newDateObj > oldDateObj) {
+            changeType = "delayed";
+            color = PrettyColors.YELLOW;
+            emoji = "⏰";
+        } else {
+            changeType = "moved forward";
+            color = PrettyColors.GREEN;
+            emoji = "🎉";
+        }
+        
+        return new EmbedBuilder()
+            .setTitle(`${emoji} ${gameName} Release Date Changed`)
+            .setDescription(`**${gameName}** has been ${changeType}.\n\nPrevious release date: ${oldDate}\nNew release date: ${newDate}\n\nWe'll keep you updated on any further changes.`)
+            .setColor(color)
+            .setFooter({ text: 'Stay tuned!' })
             .setTimestamp();
     }
 

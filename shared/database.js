@@ -776,6 +776,55 @@ class DatabaseManager {
             logger.error(`Error closing database connection pool: ${error.message}`);
         }
     }
+
+    async getUpcomingGames() {
+        try {
+            const today = new Date();
+            const formattedToday = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+            
+            logger.debug(`Fetching upcoming games from ${formattedToday} onwards`);
+            
+            // Get all games with release dates in the future
+            const results = await this._safeQuery(`
+                SELECT g.id, g.name, g.release_date, gs.type, gs.source_id, gs.last_update
+                FROM games g
+                LEFT JOIN game_sources gs ON g.id = gs.game_id
+                WHERE g.release_date >= ?
+                ORDER BY g.release_date, g.name
+            `, [formattedToday], 'Error fetching upcoming games');
+            
+            // Process the results to group sources by game
+            const gamesMap = new Map();
+            
+            for (const row of results) {
+                if (!gamesMap.has(row.id)) {
+                    gamesMap.set(row.id, {
+                        id: row.id,
+                        name: row.name,
+                        releaseDate: row.release_date,
+                        sources: []
+                    });
+                }
+                
+                const game = gamesMap.get(row.id);
+                
+                // Only add sources if they exist
+                if (row.type && row.source_id) {
+                    game.sources.push({
+                        [row.type]: row.source_id,
+                        lastUpdate: row.last_update
+                    });
+                }
+            }
+            
+            const games = Array.from(gamesMap.values());
+            logger.info(`Found ${games.length} upcoming games`);
+            return games;
+        } catch (error) {
+            logger.error(`Error fetching upcoming games: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = DatabaseManager;
