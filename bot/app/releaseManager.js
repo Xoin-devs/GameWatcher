@@ -112,10 +112,6 @@ class ReleaseManager {
                         
                         // Send date change notification
                         this.sendDateChangeMessage(game, readableOldDate, readableNewDate);
-                    } else if (game.releaseDate !== formattedCurrentDate) {
-                        // Dates are the same but formatted differently, just update the format in the DB
-                        logger.debug(`Game "${game.name}" has same date but different format (${game.releaseDate} vs ${formattedCurrentDate}). Updating format.`);
-                        await db.updateGameReleaseDate(game.id, formattedCurrentDate);
                     }
                 } catch (error) {
                     logger.error(`Error checking date changes for ${game.name}: ${error.message}`);
