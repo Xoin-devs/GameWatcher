@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const logger = require('@shared/logger');
 const MessageUtil = require('@bot/messageUtil');
 const DatabaseManager = require('@shared/database');
-const { getSteamGameData } = require('@bot/utils');
+const { getSteamGameData, parseDate, formatHumanReadableDate } = require('@bot/utils');
 
 class ReleaseManager {
     constructor() {
@@ -89,22 +89,33 @@ class ReleaseManager {
                         continue;
                     }
                     
-                    // Use the formatted date directly from the steamData object
+                    // Get the formatted date from the steamData object
                     const formattedCurrentDate = steamData.formattedReleaseDate;
-                    const storedDate = new Date(game.releaseDate);
                     
-                    // Check if the game's release date has changed
-                    if (formattedCurrentDate !== game.releaseDate) {
-                        // Convert the formatted current date to a Date object for proper comparison
-                        const currentReleaseDate = new Date(formattedCurrentDate);
-                        const dateChanged = currentReleaseDate > storedDate ? 'moved back' : 'moved forward';
-                        logger.info(`Game "${game.name}" release date has ${dateChanged} from ${game.releaseDate} to ${formattedCurrentDate}`);
+                    // Parse both dates to ensure we're comparing them properly
+                    // Using parseDate from utils which normalizes dates to YYYY-MM-DD format
+                    const storedDateObj = new Date(parseDate(game.releaseDate) + 'T00:00:00Z');
+                    const currentDateObj = new Date(parseDate(formattedCurrentDate) + 'T00:00:00Z');
+                    
+                    // Compare timestamps to check if the dates are actually different
+                    if (storedDateObj.getTime() !== currentDateObj.getTime()) {
+                        const dateChanged = currentDateObj > storedDateObj ? 'moved back' : 'moved forward';
+                        
+                        // Format dates for display using formatHumanReadableDate from Utils
+                        const readableOldDate = formatHumanReadableDate(game.releaseDate);
+                        const readableNewDate = formatHumanReadableDate(formattedCurrentDate);
+                        
+                        logger.info(`Game "${game.name}" release date has ${dateChanged} from ${readableOldDate} to ${readableNewDate}`);
                         
                         // Update the release date in the database
                         await db.updateGameReleaseDate(game.id, formattedCurrentDate);
                         
                         // Send date change notification
-                        this.sendDateChangeMessage(game, game.releaseDate, formattedCurrentDate);
+                        this.sendDateChangeMessage(game, readableOldDate, readableNewDate);
+                    } else if (game.releaseDate !== formattedCurrentDate) {
+                        // Dates are the same but formatted differently, just update the format in the DB
+                        logger.debug(`Game "${game.name}" has same date but different format (${game.releaseDate} vs ${formattedCurrentDate}). Updating format.`);
+                        await db.updateGameReleaseDate(game.id, formattedCurrentDate);
                     }
                 } catch (error) {
                     logger.error(`Error checking date changes for ${game.name}: ${error.message}`);
@@ -261,7 +272,7 @@ class ReleaseManager {
         logger.info(`Sending release date change notification for ${game.name} (${oldDate} → ${newDate})`);
         MessageUtil.sendGameDateChangeToAllGuilds(game, oldDate, newDate);
     }
-    
+
     stop() {
         if (this.dailyCronJob) {
             this.dailyCronJob.stop();
