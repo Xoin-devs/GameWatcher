@@ -46,6 +46,23 @@ function parseDate(dateInput) {
 
 function formatDate(isoDate) {
     if (!isoDate) return null;
+    
+    // Ensure isoDate is a string
+    if (typeof isoDate !== 'string') {
+        // If it's a Date object, convert to ISO string and extract the date part
+        if (isoDate instanceof Date) {
+            isoDate = isoDate.toISOString().split('T')[0];
+        } else {
+            // If it's something else we can't handle, return null
+            return null;
+        }
+    }
+    
+    // Check if string is in the expected ISO format
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+        return null;
+    }
+    
     const [year, month, day] = isoDate.split('-');
     return `${day}/${month}/${year}`;
 }
@@ -78,7 +95,7 @@ function getGameInfos(game) {
         });
     }
     if (game.releaseDate) {
-        gameInfo.push(`release_date: ${formatDate(game.releaseDate)}`);
+        gameInfo.push(`release_date: ${formatHumanReadableDate(game.releaseDate)}`);
     }
     return gameInfo.join(' ');
 }
@@ -155,11 +172,12 @@ function buildGameObject(gameName, newDetails, existingGame = {}) {
 /**
  * Fetches and processes Steam game data including name, release date, and other details
  * @param {string} appID - The Steam application ID
+ * @param {string} [countryCode='us'] - The country code for pricing (ISO 3166-1)
  * @returns {Object|null} - Object containing game data or null if not found
  */
-async function getSteamGameData(appID) {
+async function getSteamGameData(appID, countryCode = 'us') {
     try {
-        const response = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${appID}&cc=us&l=english`);
+        const response = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${appID}&cc=${countryCode.toLowerCase()}&l=english`);
         const gameData = response.data[appID]?.data;
 
         if (!gameData || !response.data[appID]?.success) {
@@ -175,8 +193,42 @@ async function getSteamGameData(appID) {
             publishers: gameData.publishers || [],
             developers: gameData.developers || [],
             headerImage: gameData.header_image || null,
-            type: gameData.type || null
+            type: gameData.type || null,
+            // Add review data properties
+            reviewScore: null,
+            reviewCount: null,
+            reviewDescription: null,
+            // Add price information
+            price: null,
+            discountPercent: null,
+            originalPrice: null,
+            currencyCode: null,
+            isFree: false // Default to false unless explicitly marked free
         };
+
+        // More accurate determination of free-to-play status
+        // Only mark as free if explicitly tagged as free or has the "Free to Play" genre
+        if (gameData.is_free === true) {
+            // Check if it's truly free or just not priced yet
+            if (gameData.genres && gameData.genres.some(genre => 
+                genre.description === "Free to Play" || 
+                genre.id === "37" // Steam's ID for Free to Play genre
+            )) {
+                result.isFree = true;
+            } else if (gameData.release_date && gameData.release_date.coming_soon === false) {
+                // If the game is released and marked as free, it's probably free
+                result.isFree = true;
+            }
+        }
+
+        // Extract price information if available
+        if (gameData.price_overview) {
+            const priceData = gameData.price_overview;
+            result.price = priceData.final_formatted;
+            result.originalPrice = priceData.initial_formatted;
+            result.discountPercent = priceData.discount_percent;
+            result.currencyCode = priceData.currency;
+        }
 
         // Process release date if available
         if (gameData.release_date && gameData.release_date.date) {
@@ -195,6 +247,36 @@ async function getSteamGameData(appID) {
                     result.formattedReleaseDate = `${parsedDate.getFullYear()}-${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}-${parsedDate.getDate().toString().padStart(2, '0')}`;
                 }
             }
+        }
+        
+        // Add review information if game has been released and has reviews
+        try {
+            // Fetch review data from Steam Store API
+            const reviewResponse = await axios.get(`https://store.steampowered.com/appreviews/${appID}?json=1&language=all&purchase_type=all`);
+            const reviewData = reviewResponse.data;
+            
+            if (reviewData && reviewData.success) {
+                // Extract review statistics
+                if (reviewData.query_summary) {
+                    const summary = reviewData.query_summary;
+                    
+                    if (summary.review_score_desc) {
+                        result.reviewDescription = summary.review_score_desc;
+                    }
+                    
+                    if (summary.total_reviews !== undefined) {
+                        result.reviewCount = summary.total_reviews;
+                    }
+                    
+                    if (summary.total_positive !== undefined && summary.total_reviews > 0) {
+                        // Calculate positive percentage
+                        result.reviewScore = Math.round((summary.total_positive / summary.total_reviews) * 100);
+                    }
+                }
+            }
+        } catch (reviewError) {
+            // Just log the error but don't fail the whole function
+            console.error(`Error fetching review data for appID ${appID}:`, reviewError.message);
         }
 
         return result;
@@ -272,6 +354,54 @@ function formatHumanReadableDate(isoDate) {
     }
 }
 
+/**
+ * Determines the appropriate country code based on the interaction
+ * @param {Interaction} interaction - Discord interaction
+ * @returns {string} - ISO country code (defaults to 'us' if not determinable)
+ */
+function getCountryCodeFromInteraction(interaction) {
+    // Discord doesn't directly provide country information
+    // We could use server region if available or default to 'us'
+    // If you have a database storing user preferences, you could look it up there
+    try {
+        // This is a theoretical implementation 
+        // If you implement user settings, you could use those instead
+        const locale = interaction.locale || 'en-US';
+        
+        // Map common locales to country codes
+        const localeMap = {
+            'en-US': 'us',
+            'en-GB': 'gb',
+            'fr': 'fr',
+            'de': 'de',
+            'es-ES': 'es',
+            'ru': 'ru',
+            'ja': 'jp',
+            'ko': 'kr',
+            'zh-CN': 'cn',
+            'pt-BR': 'br',
+            'it': 'it',
+            // Add more mappings as needed
+        };
+        
+        // Get the country code from the locale if possible
+        if (locale && localeMap[locale]) {
+            return localeMap[locale];
+        }
+        
+        // Try to extract from locale format (if it's like 'en-US')
+        const parts = locale.split('-');
+        if (parts.length > 1 && parts[1].length === 2) {
+            return parts[1].toLowerCase();
+        }
+        
+        return 'us'; // Default to US
+    } catch (error) {
+        console.error('Error getting country code:', error);
+        return 'us'; // Default to US
+    }
+}
+
 module.exports = {
     normalizeName,
     parseDate,
@@ -286,5 +416,6 @@ module.exports = {
     getSteamGameData,
     getSteamGameReleaseDate,
     isValidUrl,
-    formatHumanReadableDate
+    formatHumanReadableDate,
+    getCountryCodeFromInteraction
 };

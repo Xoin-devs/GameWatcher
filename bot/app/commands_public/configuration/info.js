@@ -28,8 +28,9 @@ module.exports = {
                     { name: 'Servers', value: `${guilds.length}`, inline: true },
                     { name: 'Games Tracked', value: `${games.length}`, inline: true },
                     { name: 'Uptime', value: uptime, inline: true },
-                    { name: 'Bot Creator', value: 'Arnauld Alex', inline: true },
-                    { name: 'Contact', value: '[LinkedIn Profile](https://www.linkedin.com/in/arnauld-alex/)', inline: true }
+                    { name: 'Bot Creator', value: 'ElBartt', inline: true },
+                    { name: 'Contact', value: '[LinkedIn Profile](https://www.linkedin.com/in/arnauld-alex/)', inline: true },
+                    { name: '🌟 Dashboard', value: '[Click here to access dashboard](http://oslo.ovh)', inline: false }
                 )
                 .setFooter({ text: 'Thanks for using Game News Forge!' })
                 .setTimestamp();
