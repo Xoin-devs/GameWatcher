@@ -95,6 +95,8 @@ class ReleaseManager {
                     
                     // Check if the game's release date has changed
                     if (formattedCurrentDate !== game.releaseDate) {
+                        // Convert the formatted current date to a Date object for proper comparison
+                        const currentReleaseDate = new Date(formattedCurrentDate);
                         const dateChanged = currentReleaseDate > storedDate ? 'moved back' : 'moved forward';
                         logger.info(`Game "${game.name}" release date has ${dateChanged} from ${game.releaseDate} to ${formattedCurrentDate}`);
                         
