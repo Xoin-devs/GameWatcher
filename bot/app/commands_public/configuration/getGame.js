@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const CommandHelper = require('@bot/commandHelper');
 const CommandsName = require('@bot/constants/commandsName');
 const CommandsOption = require('@bot/constants/commandsOption');
@@ -6,7 +6,13 @@ const Utils = require('@bot/utils');
 const SourceType = require('@bot/constants/sourceType');
 const logger = require('@shared/logger');
 const DatabaseManager = require('@shared/database');
+const gameDatabaseService = require('@bot/services/gameDatabaseService');
 const axios = require('axios');
+
+// Set up a Map to track button cooldowns
+const buttonCooldowns = new Map();
+const COOLDOWN_DURATION = 10000; // 10 seconds cooldown
+const COLLECTOR_TIMEOUT = 60000; // 1 minute collector timeout
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,6 +38,13 @@ module.exports = {
             await interaction.editReply('This game is not registered');
             return;
         }
+
+        // Get the game ID
+        const gameRows = await db.getGameId(gameName);
+        const gameId = gameRows[0].id;
+
+        // Check if the guild is subscribed to the game
+        const isSubscribed = await gameDatabaseService.isGuildSubscribed(interaction.guildId, gameId);
 
         // Get user's country code for appropriate pricing
         const countryCode = Utils.getCountryCodeFromInteraction(interaction);
@@ -187,7 +200,219 @@ module.exports = {
             iconURL: 'https://cdn.discordapp.com/avatars/1239574548928794655/e6726f56578da8c3d1f495dd2f509b33'
         });
         
-        logger.info(`Getting information about game: ${gameName}`);
-        await interaction.editReply({ embeds: [embed] });
+        // Create a button based on subscription status
+        const row = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`game_subscription_${gameId}`)
+                    .setLabel(isSubscribed ? 'Unsubscribe' : 'Subscribe')
+                    .setStyle(isSubscribed ? ButtonStyle.Danger : ButtonStyle.Success)
+                    .setEmoji(isSubscribed ? '🔕' : '🔔')
+            );
+
+        logger.info(`Getting information about game: ${gameName} (Subscribed: ${isSubscribed})`);
+        const response = await interaction.editReply({ 
+            embeds: [embed],
+            components: [row]
+        });
+
+        // Create a collector for button interactions
+        const collector = response.createMessageComponentCollector({ 
+            time: COLLECTOR_TIMEOUT
+        });
+
+        collector.on('collect', async buttonInteraction => {
+            // Check if the user who pressed the button is the one who ran the command
+            if (buttonInteraction.user.id !== interaction.user.id) {
+                await buttonInteraction.reply({ 
+                    content: 'Only the user who ran this command can use these buttons.',
+                    ephemeral: true 
+                });
+                return;
+            }
+
+            // Create a unique key for this button (combination of game ID and user)
+            const cooldownKey = `${gameId}_${buttonInteraction.user.id}`;
+            
+            // Check if this button is on cooldown
+            if (buttonCooldowns.has(cooldownKey)) {
+                const timeLeft = buttonCooldowns.get(cooldownKey) - Date.now();
+                if (timeLeft > 0) {
+                    // Button is still on cooldown
+                    await buttonInteraction.reply({ 
+                        content: `Please wait ${(timeLeft / 1000).toFixed(1)} seconds before using this button again.`,
+                        ephemeral: true 
+                    });
+                    return;
+                }
+            }
+            
+            await buttonInteraction.deferUpdate();
+            
+            try {
+                // Set the cooldown and visually disable the button temporarily
+                const cooldownEnd = Date.now() + COOLDOWN_DURATION;
+                buttonCooldowns.set(cooldownKey, cooldownEnd);
+                
+                // Get current subscription status for button text
+                const currentStatus = await gameDatabaseService.isGuildSubscribed(interaction.guildId, gameId);
+                
+                // Show processing state by updating the button to a cooldown state with countdown
+                const loadingRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`game_subscription_${gameId}_loading`)
+                            .setLabel(`${currentStatus ? 'Unsubscribing' : 'Subscribing'}... (${COOLDOWN_DURATION / 1000}s)`)
+                            .setStyle(ButtonStyle.Secondary)
+                            .setEmoji('⏱️')
+                            .setDisabled(true)
+                    );
+        
+                await interaction.editReply({
+                    embeds: [embed],
+                    components: [loadingRow]
+                });
+                
+                // Update countdown every second for better UX
+                let secondsLeft = Math.ceil(COOLDOWN_DURATION / 1000);
+                const countdownInterval = setInterval(async () => {
+                    secondsLeft--;
+                    if (secondsLeft > 0) {
+                        const countdownRow = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId(`game_subscription_${gameId}_loading`)
+                                    .setLabel(`${currentStatus ? 'Unsubscribing' : 'Subscribing'}... (${secondsLeft}s)`)
+                                    .setStyle(ButtonStyle.Secondary)
+                                    .setEmoji('⏱️')
+                                    .setDisabled(true)
+                            );
+                        
+                        await interaction.editReply({
+                            embeds: [embed],
+                            components: [countdownRow]
+                        }).catch(e => {
+                            // Silently fail if we can't update (message might be gone)
+                            clearInterval(countdownInterval);
+                        });
+                    }
+                }, 1000);
+                
+                // Perform the action
+                if (currentStatus) {
+                    // Unsubscribe
+                    await db.unlinkGameFromGuild(interaction.guildId, gameId);
+                    logger.info(`Guild ${interaction.guildId} unsubscribed from game: ${gameName} (ID: ${gameId})`);
+                } else {
+                    // Subscribe
+                    await gameDatabaseService.subscribeGuildToGame(interaction.guildId, gameId);
+                    logger.info(`Guild ${interaction.guildId} subscribed to game: ${gameName} (ID: ${gameId})`);
+                }
+                
+                // Clear the countdown interval
+                clearInterval(countdownInterval);
+                
+                // Update subscription status for UI update
+                const newStatus = await gameDatabaseService.isGuildSubscribed(interaction.guildId, gameId);
+                
+                // Send ephemeral confirmation message immediately
+                await buttonInteraction.followUp({
+                    content: newStatus 
+                        ? `✅ Successfully subscribed to **${gameName}**! You'll receive updates for this game.`
+                        : `✅ Successfully unsubscribed from **${gameName}**. You'll no longer receive updates for this game.`,
+                    ephemeral: true
+                });
+                
+                // Calculate remaining cooldown time
+                const remainingCooldown = cooldownEnd - Date.now();
+                
+                if (remainingCooldown > 0) {
+                    // Show a "cooldown complete" message when time is up
+                    setTimeout(async () => {
+                        // Update the button to enabled state after cooldown
+                        const updatedRow = new ActionRowBuilder()
+                            .addComponents(
+                                new ButtonBuilder()
+                                    .setCustomId(`game_subscription_${gameId}`)
+                                    .setLabel(newStatus ? 'Unsubscribe' : 'Subscribe')
+                                    .setStyle(newStatus ? ButtonStyle.Danger : ButtonStyle.Success)
+                                    .setEmoji(newStatus ? '🔕' : '🔔')
+                            );
+                        
+                        await interaction.editReply({
+                            embeds: [embed],
+                            components: [updatedRow]
+                        }).catch(e => logger.error('Failed to update button after cooldown:', e));
+                        
+                        // Clean up cooldown after it's complete
+                        buttonCooldowns.delete(cooldownKey);
+                    }, remainingCooldown);
+                } else {
+                    // If somehow the cooldown already ended, update immediately
+                    const updatedRow = new ActionRowBuilder()
+                        .addComponents(
+                            new ButtonBuilder()
+                                .setCustomId(`game_subscription_${gameId}`)
+                                .setLabel(newStatus ? 'Unsubscribe' : 'Subscribe')
+                                .setStyle(newStatus ? ButtonStyle.Danger : ButtonStyle.Success)
+                                .setEmoji(newStatus ? '🔕' : '🔔')
+                        );
+                    
+                    await interaction.editReply({
+                        embeds: [embed],
+                        components: [updatedRow]
+                    });
+                    
+                    // Clean up cooldown
+                    buttonCooldowns.delete(cooldownKey);
+                }
+                
+            } catch (error) {
+                logger.error(`Error handling subscription button: ${error.message}`);
+                
+                // Reset the button to its previous state
+                const currentStatus = await gameDatabaseService.isGuildSubscribed(interaction.guildId, gameId);
+                const errorRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`game_subscription_${gameId}`)
+                            .setLabel(currentStatus ? 'Unsubscribe' : 'Subscribe')
+                            .setStyle(currentStatus ? ButtonStyle.Danger : ButtonStyle.Success)
+                            .setEmoji(currentStatus ? '🔕' : '🔔')
+                    );
+                
+                await interaction.editReply({
+                    embeds: [embed],
+                    components: [errorRow]
+                });
+                
+                // Send error message
+                await buttonInteraction.followUp({
+                    content: `❌ Error: ${error.message || 'Could not process your request'}`,
+                    ephemeral: true
+                });
+                
+                // Clean up cooldown after error
+                buttonCooldowns.delete(cooldownKey);
+            }
+        });
+
+        collector.on('end', () => {
+            // Disable the button when the collector expires
+            const disabledRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`game_subscription_${gameId}`)
+                        .setLabel(isSubscribed ? 'Unsubscribe' : 'Subscribe')
+                        .setStyle(isSubscribed ? ButtonStyle.Danger : ButtonStyle.Success)
+                        .setEmoji(isSubscribed ? '🔕' : '🔔')
+                        .setDisabled(true)
+                );
+            
+            interaction.editReply({ 
+                embeds: [embed], 
+                components: [disabledRow] 
+            }).catch(e => logger.error('Failed to disable button:', e));
+        });
     },
 };

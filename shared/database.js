@@ -431,6 +431,14 @@ class DatabaseManager {
         };
     }
 
+    async getGameId(name) {
+        return await this._safeQuery(
+            'SELECT id FROM games WHERE name = ?',
+            [name],
+            `Error fetching game ID for ${name}`
+        );
+    }
+
     async updateGameReleaseDate(gameId, releaseDate) {
         const dateVal = this._validateDateFormat(releaseDate);
         
