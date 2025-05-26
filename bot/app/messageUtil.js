@@ -102,10 +102,73 @@ class MessageUtil {
 
     static convertHtmlToPlainText(html) {
         if (!html) return '';
-
-        const text = convert(html, {
+    
+        // Helper function to extract all text content recursively
+        function extractTextContent(elem) {
+            if (!elem || !elem.children) return '';
+            
+            let text = '';
+            elem.children.forEach(child => {
+                if (child.type === 'text') {
+                    text += child.data || '';
+                } else if (child.children && child.children.length > 0) {
+                    text += extractTextContent(child);
+                }
+            });
+            return text;
+        }
+    
+        // Helper function to check if a string is a URL
+        function isURL(text) {
+            // Simple URL detection - checks for http://, https://, or www. at the start
+            return /^(https?:\/\/|www\.)/i.test(text.trim());
+        }
+    
+        // Create content collector that doesn't use walk
+        const steamLink = function (elem, walk, builder, formatOptions) {
+            // Get the href attribute
+            const href = elem.attribs.href;
+            
+            // Get the inner text using our recursive function
+            const innerText = extractTextContent(elem).trim();
+            
+            // If the inner text is a URL, just display the inner text (not the href)
+            // If the inner text matches the href, just display the href
+            if (isURL(innerText)) {
+                builder.addInline(innerText);
+            } else if (innerText === href) {
+                builder.addInline(href);
+            } else {
+                builder.addInline(`[${innerText}](${href})`);
+            }
+        };
+        
+        const basicURL = function (elem, walk, builder, formatOptions) {
+            // Same implementation as steamLink
+            const href = elem.attribs.href;
+            
+            // Get the inner text using our recursive function
+            const innerText = extractTextContent(elem).trim();
+            
+            // If the inner text is a URL, just display the inner text (not the href)
+            // If the inner text matches the href, just display the href
+            if (isURL(innerText)) {
+                builder.addInline(innerText);
+            } else if (innerText === href) {
+                builder.addInline(href);
+            } else {
+                builder.addInline(`[${innerText}](${href})`);
+            }
+        };
+    
+        let text = convert(html, {
             wordwrap: null,
             preserveNewlines: true,
+            limits: {
+                maxDepth: 100,
+                maxChildNodes: 1000,
+                maxInputLength: 1000000
+            },
             formatters: {
                 'bold': function (elem, walk, builder, formatOptions) {
                     builder.addInline('**');
@@ -127,16 +190,8 @@ class MessageUtil {
                     builder.addInline('[▶️ Youtube Video](' + elem.attribs.src + ')');
                     builder.closeBlock();
                 },
-                'steamLink': function (elem, walk, builder, formatOptions) {
-                    builder.addInline('[');
-                    walk(elem.children, builder);
-                    builder.addInline('](' + elem.attribs.href + ')');
-                },
-                'basicURL': function (elem, walk, builder, formatOptions) {
-                    builder.addInline('[');
-                    walk(elem.children, builder);
-                    builder.addInline('](' + elem.attribs.href + ')');
-                }
+                'steamLink': steamLink,
+                'basicURL': basicURL
             },
             selectors: [
                 { selector: 'a', format: 'basicURL' },
@@ -150,15 +205,14 @@ class MessageUtil {
                 { selector: 'iframe', format: 'iframe' }
             ]
         });
-
-        // Remove false URL links; e.g., [Dune Awakening](/dune-awakening)
-        const regex = /\[(.*?)\]\((\/[^\s)]+)\)/g;
-        text.replace(regex, (match, p1, p2) => {
-            if (p2.startsWith('/')) {
-                text = text.replace(match, p1);
-            }
+    
+        // Remove false URL links that are adjacent markdown-style with relative paths
+        // e.g., [Dune Awakening](/dune-awakening) but not [Text] (/some-path)
+        const regex = /\[([^\]]+?)\]\(\/[^\s)]+\)/g;
+        text = text.replace(regex, (match, p1) => {
+            return p1;
         });
-
+    
         // Clean up any excessive whitespace
         return text.replace(/\n{3,}/g, '\n\n').trim();
     }

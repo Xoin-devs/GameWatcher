@@ -133,7 +133,7 @@ module.exports = {
             // If already subscribed, tell the user
             if (isSubscribed) {
                 await interaction.editReply({
-                    content: `✅ This guild is already subscribed to **"${existingGame.name}"**`
+                    content: this.addDashboardLink(`✅ This guild is already subscribed to **"${existingGame.name}"**`)
                 });
                 return;
             }
@@ -162,7 +162,7 @@ module.exports = {
         // Case 1: Game exists by name and guild is already subscribed
         if (exists && subscribed) {
             await interaction.editReply({
-                content: `✅ This guild is already subscribed to **"${gameName}"**`
+                content: this.addDashboardLink(`✅ This guild is already subscribed to **"${gameName}"**`)
             });
             return;
         }
@@ -172,7 +172,7 @@ module.exports = {
             try {
                 await gameDatabaseService.subscribeGuildToGame(guildId, gameId);
                 await interaction.editReply({
-                    content: `✅ Game **"${gameName}"** already exists and has been added to this guild's subscription list!`
+                    content: this.addDashboardLink(`✅ Game **"${gameName}"** already exists and has been added to this guild's subscription list!`)
                 });
                 return;
             } catch (error) {
@@ -210,11 +210,20 @@ module.exports = {
                 successMessage += `\n📅 Release Date: **${humanReadableDate}**`;
             }
             
-            await interaction.editReply({ content: successMessage });
+            await interaction.editReply({ content: this.addDashboardLink(successMessage) });
             
         } catch (error) {
             throw new Error(`Failed to add game to database: ${error.message || 'Unknown database error'}`);
         }
+    },
+    
+    /**
+     * Helper method to add dashboard link to subscription messages
+     * @param {string} message - Base message
+     * @returns {string} - Message with dashboard link
+     */
+    addDashboardLink(message) {
+        return `${message}\n\nManage your subscription in your personal [Dashboard](http://oslo.ovh)`;
     },
     
     /**
@@ -270,7 +279,7 @@ module.exports = {
             baseMessage += `\n📅 Release Date: **${humanReadableDate}**`;
         }
         
-        return baseMessage;
+        return this.addDashboardLink(baseMessage);
     },
     
     /**
