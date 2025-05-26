@@ -8,8 +8,32 @@ function normalizeName(name) {
 
 function parseDate(dateInput) {
     if (!dateInput) return null;
-    const [day, month, year] = dateInput.split('/');
-    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    
+    let isoDate;
+    
+    // Check if dateInput is a Date object
+    if (dateInput instanceof Date) {
+        // Format the Date object to YYYY-MM-DD
+        isoDate = `${dateInput.getFullYear()}-${(dateInput.getMonth() + 1).toString().padStart(2, '0')}-${dateInput.getDate().toString().padStart(2, '0')}`;
+    } 
+    // Check if dateInput is already in ISO format (YYYY-MM-DD)
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        isoDate = dateInput;
+    }
+    // Process as DD/MM/YYYY string format
+    else if (typeof dateInput === 'string' && dateInput.includes('/')) {
+        const [day, month, year] = dateInput.split('/');
+        isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+    // Try to parse as a general string date format
+    else {
+        const date = new Date(dateInput);
+        if (!isNaN(date.getTime())) {
+            isoDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        } else {
+            throw new Error(`Invalid date format: ${dateInput}`);
+        }
+    }
     
     // Validate the date is correct
     const date = new Date(isoDate);
@@ -128,29 +152,123 @@ function buildGameObject(gameName, newDetails, existingGame = {}) {
     return newGame;
 }
 
-async function getSteamGameReleaseDate(appID) {
+/**
+ * Fetches and processes Steam game data including name, release date, and other details
+ * @param {string} appID - The Steam application ID
+ * @returns {Object|null} - Object containing game data or null if not found
+ */
+async function getSteamGameData(appID) {
     try {
         const response = await axios.get(`https://store.steampowered.com/api/appdetails?appids=${appID}&cc=us&l=english`);
         const gameData = response.data[appID]?.data;
 
-        if (gameData && gameData.release_date && gameData.release_date.date) {
+        if (!gameData || !response.data[appID]?.success) {
+            return null;
+        }
+
+        // Create result object with available data
+        const result = {
+            name: gameData.name,
+            appId: appID,
+            releaseDate: null,
+            formattedReleaseDate: null,
+            publishers: gameData.publishers || [],
+            developers: gameData.developers || [],
+            headerImage: gameData.header_image || null,
+            type: gameData.type || null
+        };
+
+        // Process release date if available
+        if (gameData.release_date && gameData.release_date.date) {
             const releaseDate = gameData.release_date.date;
 
-            // If date is only a year, return null
-            if (releaseDate.length === 4) {
-                return null;
-            }
-
-            const parsedDate = new Date(releaseDate);
-            if (isNaN(parsedDate.getTime()) == false) {
-                return parsedDate;
+            // Handle if date is only a year
+            if (releaseDate.length === 4 && !isNaN(parseInt(releaseDate, 10))) {
+                // Don't set a specific date for year-only releases
+                result.releaseYear = parseInt(releaseDate, 10);
+            } else {
+                // Parse full date
+                const parsedDate = new Date(releaseDate);
+                if (!isNaN(parsedDate.getTime())) {
+                    result.releaseDate = parsedDate;
+                    // Format date as YYYY-MM-DD for database storage
+                    result.formattedReleaseDate = `${parsedDate.getFullYear()}-${(parsedDate.getMonth() + 1).toString().padStart(2, '0')}-${parsedDate.getDate().toString().padStart(2, '0')}`;
+                }
             }
         }
 
-        return null;
+        return result;
     } catch (error) {
-        logger.error(`Error fetching release date for appID ${appID}:`, error.message);
+        console.error(`Error fetching Steam data for appID ${appID}:`, error.message);
         return null;
+    }
+}
+
+/**
+ * Legacy function maintained for backward compatibility
+ * @param {string} appID - The Steam application ID
+ * @returns {Date|null} - Release date as Date object or null
+ * @deprecated Use getSteamGameData instead
+ */
+async function getSteamGameReleaseDate(appID) {
+    const gameData = await getSteamGameData(appID);
+    return gameData ? gameData.releaseDate : null;
+}
+
+/**
+ * Validates if a string is a properly formatted URL and contains specified domains
+ * @param {string} url - The URL to validate
+ * @param {string[]} [allowedDomains=[]] - Array of allowed domains
+ * @returns {boolean} - Whether the URL is valid
+ */
+function isValidUrl(url, allowedDomains = []) {
+    try {
+        const urlObj = new URL(url);
+        
+        // Check protocol
+        if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+            return false;
+        }
+        
+        // Check domain if allowedDomains are specified
+        if (allowedDomains.length > 0) {
+            return allowedDomains.some(domain => urlObj.hostname.includes(domain));
+        }
+        
+        return true;
+    } catch (e) {
+        // Invalid URL format
+        return false;
+    }
+}
+
+/**
+ * Formats ISO date string (YYYY-MM-DD) to a human-readable format
+ * @param {string} isoDate - Date in YYYY-MM-DD format
+ * @returns {string} - Formatted date string
+ */
+function formatHumanReadableDate(isoDate) {
+    if (!isoDate) return 'Unknown';
+    
+    try {
+        const date = new Date(isoDate);
+        
+        // Check if valid date
+        if (isNaN(date.getTime())) {
+            return isoDate; // Return original if parsing failed
+        }
+        
+        // Format options
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        
+        return date.toLocaleDateString('en-US', options);
+    } catch (error) {
+        console.error(`Error formatting date ${isoDate}:`, error);
+        return isoDate;
     }
 }
 
@@ -165,5 +283,8 @@ module.exports = {
     msToTime,
     getGameDetailsFromInteraction,
     buildGameObject,
-    getSteamGameReleaseDate
+    getSteamGameData,
+    getSteamGameReleaseDate,
+    isValidUrl,
+    formatHumanReadableDate
 };

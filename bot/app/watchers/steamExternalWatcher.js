@@ -7,7 +7,7 @@ const SourceType = require('@bot/constants/sourceType');
 class SteamExternalWatcher extends Watcher {
     constructor() {
         if (isDev()) {
-            super(timeConstants.ONE_MINUTES);
+            super(timeConstants.TWO_HOURS);
         } else if (isProd()) {
             super(timeConstants.TWO_HOURS + timeConstants.THIRTY_MINUTES);
         }

@@ -825,6 +825,113 @@ class DatabaseManager {
             throw error;
         }
     }
+
+    async getGameBySteamAppId(steamAppId) {
+        logger.debug(`Looking for game with Steam AppID: ${steamAppId}`);
+        
+        // Optimize by using a JOIN query to fetch game and sources in one call
+        const gameResult = await this._safeQuery(`
+            SELECT g.id, g.name, g.release_date, gs.type, gs.source_id, gs.last_update
+            FROM games g
+            JOIN game_sources gs ON g.id = gs.game_id
+            WHERE gs.type = 'steam_internal' AND gs.source_id = ?
+        `, [steamAppId], `Error fetching game by Steam AppID ${steamAppId}`);
+        
+        if (gameResult.length === 0) return null;
+        
+        // Process the result to build a complete game object with sources
+        const gameId = gameResult[0].id;
+        
+        // Fetch all sources for this game
+        const sourcesResult = await this._safeQuery(`
+            SELECT type, source_id, last_update
+            FROM game_sources
+            WHERE game_id = ?
+        `, [gameId], `Error fetching sources for game ID ${gameId}`);
+        
+        const sources = sourcesResult.map(row => ({
+            [row.type]: row.source_id,
+            lastUpdate: row.last_update
+        }));
+        
+        return {
+            id: gameId,
+            name: gameResult[0].name,
+            sources: sources,
+            ...(gameResult[0].release_date && { releaseDate: gameResult[0].release_date })
+        };
+    }
+
+    async getGameByTwitterUrl(twitterUrl) {
+        logger.debug(`Looking for game with Twitter URL: ${twitterUrl}`);
+        
+        // Optimize by using a JOIN query to fetch game and sources in one call
+        const gameResult = await this._safeQuery(`
+            SELECT g.id, g.name, g.release_date, gs.type, gs.source_id, gs.last_update
+            FROM games g
+            JOIN game_sources gs ON g.id = gs.game_id
+            WHERE gs.type = 'twitter' AND gs.source_id = ?
+        `, [twitterUrl], `Error fetching game by Twitter URL ${twitterUrl}`);
+        
+        if (gameResult.length === 0) return null;
+        
+        // Process the result to build a complete game object with sources
+        const gameId = gameResult[0].id;
+        
+        // Fetch all sources for this game
+        const sourcesResult = await this._safeQuery(`
+            SELECT type, source_id, last_update
+            FROM game_sources
+            WHERE game_id = ?
+        `, [gameId], `Error fetching sources for game ID ${gameId}`);
+        
+        const sources = sourcesResult.map(row => ({
+            [row.type]: row.source_id,
+            lastUpdate: row.last_update
+        }));
+        
+        return {
+            id: gameId,
+            name: gameResult[0].name,
+            sources: sources,
+            ...(gameResult[0].release_date && { releaseDate: gameResult[0].release_date })
+        };
+    }
+
+    async updateGameSources(gameId, sources) {
+        logger.debug(`Updating sources for game ID ${gameId}`);
+        
+        // Use a transaction to ensure atomicity
+        let conn;
+        try {
+            conn = await this.pool.getConnection();
+            await conn.beginTransaction();
+            
+            // Delete existing sources
+            await conn.query('DELETE FROM game_sources WHERE game_id = ?', [gameId]);
+            
+            // Insert new sources
+            for (const source of sources) {
+                for (const [type, sourceId] of Object.entries(source)) {
+                    if (type === 'lastUpdate') continue;
+                    await conn.query(
+                        'INSERT INTO game_sources (game_id, type, source_id, last_update) VALUES (?, ?, ?, ?)',
+                        [gameId, type, sourceId, source.lastUpdate || null]
+                    );
+                }
+            }
+            
+            await conn.commit();
+            logger.info(`Successfully updated sources for game ID ${gameId}`);
+            return true;
+        } catch (error) {
+            if (conn) await conn.rollback();
+            logger.error(`Error updating sources for game ID ${gameId}: ${error.message}`);
+            throw error;
+        } finally {
+            if (conn) conn.release();
+        }
+    }
 }
 
 module.exports = DatabaseManager;

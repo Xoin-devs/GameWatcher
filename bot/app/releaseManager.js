@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const logger = require('@shared/logger');
 const MessageUtil = require('@bot/messageUtil');
 const DatabaseManager = require('@shared/database');
-const { getSteamGameReleaseDate } = require('@bot/utils');
+const { getSteamGameData } = require('@bot/utils');
 
 class ReleaseManager {
     constructor() {
@@ -80,18 +80,17 @@ class ReleaseManager {
                     logger.debug(`Game ${game.name} has no Steam AppID, skipping date change check`);
                     continue;
                 }
-                
-                try {
+                  try {
                     logger.debug(`Checking current release date for ${game.name} (AppID: ${steamAppId})`);
-                    const currentReleaseDate = await getSteamGameReleaseDate(steamAppId);
+                    const steamData = await getSteamGameData(steamAppId);
                     
-                    if (!currentReleaseDate) {
+                    if (!steamData || !steamData.releaseDate) {
                         logger.debug(`No release date found for ${game.name}`);
                         continue;
                     }
                     
-                    // Format dates for comparison
-                    const formattedCurrentDate = `${currentReleaseDate.getFullYear()}-${(currentReleaseDate.getMonth() + 1).toString().padStart(2, '0')}-${currentReleaseDate.getDate().toString().padStart(2, '0')}`;
+                    // Use the formatted date directly from the steamData object
+                    const formattedCurrentDate = steamData.formattedReleaseDate;
                     const storedDate = new Date(game.releaseDate);
                     
                     // Check if the game's release date has changed
@@ -143,16 +142,14 @@ class ReleaseManager {
                     logger.debug(`Game ${game.name} has no Steam AppID, skipping release date lookup`);
                     continue;
                 }
-                
-                try {
+                  try {
                     logger.debug(`Fetching release date for ${game.name} (AppID: ${steamAppId})`);
-                    const releaseDate = await getSteamGameReleaseDate(steamAppId);
+                    const steamData = await getSteamGameData(steamAppId);
                     
-                    if (releaseDate) {
-                        logger.info(`Found release date for ${game.name}: ${releaseDate}`);
-                        const releaseDateFormatted = `${releaseDate.getFullYear()}-${(releaseDate.getMonth() + 1).toString().padStart(2, '0')}-${releaseDate.getDate().toString().padStart(2, '0')}`;
-                        logger.debug(`Updating release date for ${game.name} to ${releaseDateFormatted}`);
-                        await db.updateGameReleaseDate(game.id, releaseDateFormatted);
+                    if (steamData && steamData.formattedReleaseDate) {
+                        logger.info(`Found release date for ${game.name}: ${steamData.releaseDate}`);
+                        logger.debug(`Updating release date for ${game.name} to ${steamData.formattedReleaseDate}`);
+                        await db.updateGameReleaseDate(game.id, steamData.formattedReleaseDate);
                     } else {
                         logger.debug(`No release date found for ${game.name}`);
                     }
