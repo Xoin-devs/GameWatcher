@@ -84,17 +84,18 @@ class Router {
         // Static pages
         this.router.get('/privacy-policy', (req, res) => {
             res.render('pages/privacy_policy');
-        });
-
-        this.router.get('/tos', (req, res) => {
+        });        this.router.get('/tos', (req, res) => {
             res.render('pages/terms_of_service');
         });
         
-        // Error handler for 404 - page not found
+        // 404 handler for unmatched routes - this should only trigger for actual 404s
         this.router.use((req, res, next) => {
-            const err = new Error('Page not found');
-            err.statusCode = 404;
-            next(err);
+            // Only create 404 error if no response has been sent yet
+            if (!res.headersSent) {
+                const err = new Error('Page not found');
+                err.statusCode = 404;
+                next(err);
+            }
         });
     }
     

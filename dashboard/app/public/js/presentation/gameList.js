@@ -296,12 +296,13 @@ class GameList {
                 onPageChange(newPage);
             });
         });
-          // Game cards
+        
+        // Game cards
         this.container.querySelectorAll('.game-card').forEach(card => {
             // Click handler
             card.addEventListener('click', (e) => {
-                // Don't trigger if clicking directly on the checkbox
-                if (e.target.tagName === 'INPUT' && e.target.type === 'checkbox') {
+                // Don't trigger if clicking on the toggle switch area or any of its children
+                if (e.target.closest('.toggle-container')) {
                     return;
                 }
                 

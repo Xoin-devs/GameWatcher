@@ -10,10 +10,10 @@ const config = require('@shared/config');
  */
 function getSessionCookieConfig() {
     const isProduction = config.isProd();
-      const cookieConfig = {
+    const cookieConfig = {
         httpOnly: true,
         maxAge: parseInt(process.env.SESSION_MAX_AGE || 604800000, 10), // 7 days by default
-        sameSite: 'none' // Changed from 'lax' to 'none' to support cross-site authentication
+        sameSite: isProduction ? 'none' : 'lax' // Use 'none' only in production, 'lax' in development
     };
     
     // Only use secure cookies in production
