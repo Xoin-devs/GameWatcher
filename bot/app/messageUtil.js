@@ -13,7 +13,58 @@ class MessageUtil {
 
     static truncateContent(content, endMessage) {
         const maxLength = DiscordConstants.MESSASGE_MAX_LENGTH;
-        return content.length <= maxLength ? content : content.substring(0, maxLength - endMessage.length) + endMessage;
+
+        if (content.length <= maxLength) {
+            return content;
+        }
+
+        // Calculate where we need to truncate
+        const truncateAt = maxLength - endMessage.length;
+
+        // Check if we're in the middle of a URL
+        // Look for Markdown links [text](url) and regular URLs
+        const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        const plainUrlRegex = /(https?:\/\/[^\s]+)/g;
+
+        // Find all markdown links and plain URLs
+        const allLinks = [];
+        let match;
+
+        // Find markdown links
+        while ((match = markdownLinkRegex.exec(content)) !== null) {
+            const linkStart = match.index;
+            const linkEnd = linkStart + match[0].length;
+            allLinks.push({ start: linkStart, end: linkEnd });
+        }
+
+        // Reset regex lastIndex
+        plainUrlRegex.lastIndex = 0;
+
+        // Find plain URLs
+        while ((match = plainUrlRegex.exec(content)) !== null) {
+            const linkStart = match.index;
+            const linkEnd = linkStart + match[0].length;
+
+            // Only add if it's not already part of a markdown link
+            const isInsideMarkdownLink = allLinks.some(link =>
+                linkStart >= link.start && linkEnd <= link.end
+            );
+
+            if (!isInsideMarkdownLink) {
+                allLinks.push({ start: linkStart, end: linkEnd });
+            }
+        }
+
+        // Check if truncation point is inside any link
+        for (const link of allLinks) {
+            if (truncateAt > link.start && truncateAt < link.end) {
+                // If inside a link, back up to start of link
+                return content.substring(0, link.start) + endMessage;
+            }
+        }
+
+        // Default case: safe to truncate at calculated position
+        return content.substring(0, truncateAt) + endMessage;
     }
 
     static getIconNameFromFeedname(feedname) {
@@ -102,11 +153,11 @@ class MessageUtil {
 
     static convertHtmlToPlainText(html) {
         if (!html) return '';
-    
+
         // Helper function to extract all text content recursively
         function extractTextContent(elem) {
             if (!elem || !elem.children) return '';
-            
+
             let text = '';
             elem.children.forEach(child => {
                 if (child.type === 'text') {
@@ -117,21 +168,21 @@ class MessageUtil {
             });
             return text;
         }
-    
+
         // Helper function to check if a string is a URL
         function isURL(text) {
             // Simple URL detection - checks for http://, https://, or www. at the start
             return /^(https?:\/\/|www\.)/i.test(text.trim());
         }
-    
+
         // Create content collector that doesn't use walk
         const steamLink = function (elem, walk, builder, formatOptions) {
             // Get the href attribute
             const href = elem.attribs.href;
-            
+
             // Get the inner text using our recursive function
             const innerText = extractTextContent(elem).trim();
-            
+
             // If the inner text is a URL, just display the inner text (not the href)
             // If the inner text matches the href, just display the href
             if (isURL(innerText)) {
@@ -142,14 +193,14 @@ class MessageUtil {
                 builder.addInline(`[${innerText}](${href})`);
             }
         };
-        
+
         const basicURL = function (elem, walk, builder, formatOptions) {
             // Same implementation as steamLink
             const href = elem.attribs.href;
-            
+
             // Get the inner text using our recursive function
             const innerText = extractTextContent(elem).trim();
-            
+
             // If the inner text is a URL, just display the inner text (not the href)
             // If the inner text matches the href, just display the href
             if (isURL(innerText)) {
@@ -160,7 +211,7 @@ class MessageUtil {
                 builder.addInline(`[${innerText}](${href})`);
             }
         };
-    
+
         let text = convert(html, {
             wordwrap: null,
             preserveNewlines: true,
@@ -205,14 +256,14 @@ class MessageUtil {
                 { selector: 'iframe', format: 'iframe' }
             ]
         });
-    
+
         // Remove false URL links that are adjacent markdown-style with relative paths
         // e.g., [Dune Awakening](/dune-awakening) but not [Text] (/some-path)
         const regex = /\[([^\]]+?)\]\(\/[^\s)]+\)/g;
         text = text.replace(regex, (match, p1) => {
             return p1;
         });
-    
+
         // Clean up any excessive whitespace
         return text.replace(/\n{3,}/g, '\n\n').trim();
     }
@@ -323,7 +374,7 @@ class MessageUtil {
                 month: 'long',
                 year: 'numeric'
             });
-            
+
             const newDateFormatted = new Date(newDate).toLocaleDateString('en-US', {
                 day: 'numeric',
                 month: 'long',
@@ -379,7 +430,7 @@ class MessageUtil {
         // Determine if it's a delay or advancement
         const newDateObj = new Date(newDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
         const oldDateObj = new Date(oldDate.replace(/(\d+)(st|nd|rd|th)/, '$1'));
-        
+
         let changeType, color, emoji;
         if (newDateObj > oldDateObj) {
             changeType = "delayed";
@@ -390,7 +441,7 @@ class MessageUtil {
             color = PrettyColors.GREEN;
             emoji = "🎉";
         }
-        
+
         return new EmbedBuilder()
             .setTitle(`${emoji} ${gameName} Release Date Changed`)
             .setDescription(`**${gameName}** has been ${changeType}.\n\nPrevious release date: ${oldDate}\nNew release date: ${newDate}\n\nWe'll keep you updated on any further changes.`)
