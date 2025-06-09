@@ -32,6 +32,17 @@ class GameService extends BaseService {
     }
 
     /**
+     * Get all games
+     * @returns {Promise<Object|null>} Games or null if not found
+     */
+    static async getGames() {
+        return this.executeMethod(async () => {
+            const db = await this.getDatabase();
+            return await db.getGames();
+        }, 'getGames');
+    }
+
+    /**
      * Get paginated games with subscription status for a guild
      * @param {string} guildId - The guild ID
      * @param {number} page - Page number

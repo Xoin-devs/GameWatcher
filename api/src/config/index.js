@@ -14,7 +14,7 @@ const config = {
     // CORS settings - Make sure to include all relevant origins with appropriate fallbacks
     corsOrigins: process.env.CORS_ORIGINS ? 
         process.env.CORS_ORIGINS.split(',') : 
-        ['https://oslo.ovh', 'http://localhost:4000', 'http://localhost:81', 'http://localhost:8080', '*'],
+        ['https://oslo.ovh', 'http://localhost:5173', 'http://localhost:4000', 'http://localhost:81', 'http://localhost:8080', '*'],
     
     // Include shared helper methods
     isProd: sharedConfig.isProd,
